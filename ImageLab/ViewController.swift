@@ -18,6 +18,7 @@ class ViewController: UIViewController   {
     let pinchFilterIndex = 2
     var detector:CIDetector! = nil
     let bridge = OpenCVBridge()
+    var isFlashOn:Bool = false
     
     //MARK: Outlets in view
     @IBOutlet weak var flashSlider: UISlider!
@@ -134,12 +135,12 @@ class ViewController: UIViewController   {
     
     //MARK: Convenience Methods for UI Flash and Camera Toggle
     @IBAction func flash(_ sender: AnyObject) {
-        if(self.videoManager.toggleFlash()){
-            self.flashSlider.value = 1.0
+        // Toggle Flash. If Overheated, Toggle Will Not Change State
+        if(!self.videoManager.toggleFlash()){
+            isFlashOn.toggle()
         }
-        else{
-            self.flashSlider.value = 0.0
-        }
+        // Update Slider Value
+        self.flashSlider.value = isFlashOn ? 1.0 : 0.0
     }
     
     @IBAction func switchCamera(_ sender: AnyObject) {
@@ -148,12 +149,14 @@ class ViewController: UIViewController   {
     
     @IBAction func setFlashLevel(_ sender: UISlider) {
         if(sender.value>0.0){
+            isFlashOn = true
             let val = self.videoManager.turnOnFlashwithLevel(sender.value)
             if val {
                 print("Flash return, no errors.")
             }
         }
         else if(sender.value==0.0){
+            isFlashOn = false
             self.videoManager.turnOffFlash()
         }
     }
