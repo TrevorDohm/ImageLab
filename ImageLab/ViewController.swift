@@ -12,20 +12,22 @@ import MetalKit
 
 class ViewController: UIViewController   {
 
-    //MARK: Class Properties
+    // MARK: Class Properties
     var filters : [CIFilter]! = nil
     var videoManager:VisionAnalgesic! = nil
     let pinchFilterIndex = 2
     var detector:CIDetector! = nil
     let bridge = OpenCVBridge()
-    var isFlashOn:Bool = false
+    var isFlashManuallyControlled:Bool = false
     
-    //MARK: Outlets in view
+    // MARK: View Outlets
     @IBOutlet weak var flashSlider: UISlider!
     @IBOutlet weak var stageLabel: UILabel!
     @IBOutlet weak var cameraView: MTKView!
+    @IBOutlet weak var torchToggleButton: UIButton!
+    @IBOutlet weak var cameraToggleButton: UIButton!
     
-    //MARK: ViewController Hierarchy
+    // MARK: ViewController Hierarchy
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -35,7 +37,7 @@ class ViewController: UIViewController   {
         self.bridge.loadHaarCascade(withFilename: "nose")
         
         self.videoManager = VisionAnalgesic(view: self.cameraView)
-        self.videoManager.setCameraPosition(position: AVCaptureDevice.Position.front)
+        self.videoManager.setCameraPosition(position: AVCaptureDevice.Position.back)
         
         // create dictionary for face detection
         // HINT: you need to manipulate these properties for better face detection efficiency
@@ -56,16 +58,16 @@ class ViewController: UIViewController   {
     
     }
     
-    //MARK: Process image output
+    // MARK: Process Image Output
     func processImageSwift(inputImage:CIImage) -> CIImage{
         
         // detect faces
-        let f = getFaces(img: inputImage)
+//        let f = getFaces(img: inputImage)
         
         // if no faces, just return original image
-        if f.count == 0 { return inputImage }
+//        if f.count == 0 { return inputImage }
         
-        var retImage = inputImage
+//        var retImage = inputImage
         
         //-------------------Example 1----------------------------------
         // if you just want to process on separate queue use this code
@@ -92,17 +94,43 @@ class ViewController: UIViewController   {
         //You can also send in the bounds of the face to ONLY process the face in OpenCV
         // or any bounds to only process a certain bounding region in OpenCV
         
-        self.bridge.setImage(retImage,
-                             withBounds: f[0].bounds, // the first face bounds
+        // Initializer
+        var retImage = inputImage
+        
+        // Set Current Image
+        self.bridge.setImage(inputImage,
+                             withBounds: inputImage.extent,
                              andContext: self.videoManager.getCIContext())
         
-        self.bridge.processImage()
-        retImage = self.bridge.getImageComposite() // get back opencv processed part of the image (overlayed on original)
+        // Process Finger
+        let isFingerDetected = self.bridge.processFinger()
         
+        // Based On Return Value, Enable / Disable Buttons
+        DispatchQueue.main.async {
+            self.torchToggleButton.isEnabled = !isFingerDetected
+            self.cameraToggleButton.isEnabled = !isFingerDetected
+        }
+
+        // Toggle Flash Depending On Return
+        // Note: Only Change If Not Already Controlled
+        if !isFlashManuallyControlled {
+            if isFingerDetected {
+                _ = self.videoManager.turnOnFlashwithLevel(1.0)
+            }
+            else {
+                self.videoManager.turnOffFlash()
+            }
+        }
+        
+        // Get Back OpenCV Processed Part Of Image
+        retImage = self.bridge.getImageComposite()
+        
+        // Return Augmented Image
         return retImage
+        
     }
     
-    //MARK: Setup Face Detection
+    // MARK: Setup Face Detection
     
     func getFaces(img:CIImage) -> [CIFaceFeature]{
         // this ungodly mess makes sure the image is the correct orientation
@@ -111,7 +139,6 @@ class ViewController: UIViewController   {
         return self.detector.features(in: img, options: optsFace) as! [CIFaceFeature]
         
     }
-    
     
     // change the type of processing done in OpenCV
     @IBAction func swipeRecognized(_ sender: UISwipeGestureRecognizer) {
@@ -133,14 +160,17 @@ class ViewController: UIViewController   {
 
     }
     
-    //MARK: Convenience Methods for UI Flash and Camera Toggle
+    // MARK: Convenience Methods For UI Flash, Camera Toggle
     @IBAction func flash(_ sender: AnyObject) {
-        // Toggle Flash. If Overheated, Toggle Will Not Change State
-        if(!self.videoManager.toggleFlash()){
-            isFlashOn.toggle()
-        }
-        // Update Slider Value
-        self.flashSlider.value = isFlashOn ? 1.0 : 0.0
+        
+         // Toggle Flash. If Overheated, Toggle Will Not Change State
+         if (!self.videoManager.toggleFlash()) {
+             isFlashManuallyControlled.toggle()
+         }
+         
+         // Update Slider Value
+         self.flashSlider.value = isFlashManuallyControlled ? 1.0 : 0.0
+         
     }
     
     @IBAction func switchCamera(_ sender: AnyObject) {
@@ -148,19 +178,16 @@ class ViewController: UIViewController   {
     }
     
     @IBAction func setFlashLevel(_ sender: UISlider) {
-        if(sender.value>0.0){
-            isFlashOn = true
+        if (sender.value > 0.0) {
+            isFlashManuallyControlled = true
             let val = self.videoManager.turnOnFlashwithLevel(sender.value)
             if val {
-                print("Flash return, no errors.")
+                print("Flash Return, No Errors")
             }
         }
-        else if(sender.value==0.0){
-            isFlashOn = false
+        else if (sender.value == 0.0) {
+            isFlashManuallyControlled = false
             self.videoManager.turnOffFlash()
         }
     }
-
-   
 }
-

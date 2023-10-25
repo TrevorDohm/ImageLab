@@ -36,4 +36,7 @@
 
 -(void)loadHaarCascadeWithFilename:(NSString*)filename;
 
+// Process Finger Header Declaration
+-(bool)processFinger;
+
 @end

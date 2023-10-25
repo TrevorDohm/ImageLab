@@ -1,4 +1,4 @@
-//
+///
 //  OpenCVBridge.m
 //  LookinLive
 //
@@ -22,15 +22,114 @@ using namespace cv;
 
 @implementation OpenCVBridge
 
+// Global Variables (For Processing Finger Circularly)
+float avgPixelIntensityRed[100];
+float avgPixelIntensityGreen[100];
+float avgPixelIntensityBlue[100];
+int currentIndex = 0;
+bool flash = false;
+int flashCooldownCounter = 60; // 2 Seconds (30 FPS Default)
 
-// This can cause namespace issues when declaring a variable like this
-// BUT IT IS OKAY FOR FLIPPED MODULE TO DO THIS
-float globalNameScopeVector[10];
+// Text Information
+char text[100];
+double fontScale = 3.5;
+int thickness = 2;
+int baseline = 0;
+cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickness, &baseline);
 
-#pragma mark ===Write Your Code Here===
-// you can define your own functions here for processing the image
+#pragma mark === Write Your Code Here ===
+-(bool)processFinger{
+    
+    // Corrected Color Conversion
+    cv::Mat image_copy;
+    Scalar avgPixelIntensity;
+    cvtColor(_image, image_copy, CV_RGBA2BGR);
+    avgPixelIntensity = cv::mean( image_copy );
+    
+    // Testing Output
+    // std::cout << avgPixelIntensity.val[0] << "\n";
+    // std::cout << avgPixelIntensity.val[1] << "\n";
+    // std::cout << avgPixelIntensity.val[2] << "\n\n";
+    
+    // When Index Reaches Maximum (100)
+    // std::cout << currentIndex << std::endl;
+    if (currentIndex >= 100) {
+        
+        // Initialize Sums
+        double sumBlue = 0.0;
+        double sumGreen = 0.0;
+        double sumRed = 0.0;
 
+        // Iterate Over Arrays, Sum Up Values
+        for (int i = 0; i < 100; i++) {
+            sumBlue += avgPixelIntensityBlue[i];
+            sumGreen += avgPixelIntensityGreen[i];
+            sumRed += avgPixelIntensityRed[i];
+        }
 
+        // Calculate Average Of Averages
+        double avgBlue = sumBlue / 100.0;
+        double avgGreen = sumGreen / 100.0;
+        double avgRed = sumRed / 100.0;
+
+        // Format the text string
+        sprintf(text, "Avg B: %.2f, G: %.2f, R: %.2f", avgBlue, avgGreen, avgRed);
+        
+        // Reset Current Index
+        currentIndex = 0;
+        
+    }
+    
+    // Calculate Starting Position (BL Corner) For Centering
+    cv::Point textOrg((image_copy.cols - textSize.width) / 16, (image_copy.rows + textSize.height) / 16);
+    
+    // Overlay Text Onto Image
+    cv::putText(_image, text, textOrg, FONT_HERSHEY_PLAIN, fontScale, Scalar::all(255), thickness, 2);
+    
+    // Cooldown Counter Check
+    if (flashCooldownCounter == 0) {
+        
+        // Empirically Tested Finger Thresholds
+        if (flash) {
+            if (avgPixelIntensity.val[2] < 160) {
+                flash = false;
+            }
+        }
+        else {
+            if (avgPixelIntensity.val[0] < 20 and
+                avgPixelIntensity.val[1] < 20 and
+                avgPixelIntensity.val[2] > 20) {
+                flash = true;
+            }
+        }
+        
+        // Reset Cooldown
+        flashCooldownCounter = 30;
+
+    }
+        
+    // Cooldown Decrement
+    if (flashCooldownCounter > 0) {
+        flashCooldownCounter--;
+    }
+    
+    // Execute Only When Finger Over Camera
+    if (flash) {
+        
+        // Save Average Blue, Green, Red Values
+        avgPixelIntensityBlue[currentIndex] = avgPixelIntensity.val[0];
+        avgPixelIntensityGreen[currentIndex] = avgPixelIntensity.val[1];
+        avgPixelIntensityRed[currentIndex] = avgPixelIntensity.val[2];
+        
+        // Increment Index
+        currentIndex++;
+        
+    }
+    
+    // Return Flash
+    return flash;
+    
+}
 
 #pragma mark Define Custom Functions Here
 -(void)processImage{
