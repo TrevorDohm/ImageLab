@@ -36,7 +36,7 @@
                                             </subviews>
                                         </tableViewCellContentView>
                                         <connections>
-                                            <segue destination="BYZ-38-t0r" kind="show" id="g2M-nu-rPg"/>
+                                            <segue destination="2Mp-6e-RCZ" kind="show" id="Ngh-5N-bVG"/>
                                         </connections>
                                     </tableViewCell>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" textLabel="WV0-CK-YVP" style="IBUITableViewCellStyleDefault" id="4JL-sg-ZnG">
@@ -55,6 +55,9 @@
                                                 </label>
                                             </subviews>
                                         </tableViewCellContentView>
+                                        <connections>
+                                            <segue destination="BYZ-38-t0r" kind="show" id="2vK-CM-Uba"/>
+                                        </connections>
                                     </tableViewCell>
                                 </cells>
                             </tableViewSection>
@@ -69,6 +72,39 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="GuC-Bx-9Jf" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-266" y="429"/>
+        </scene>
+        <!--ModuleA View Controller-->
+        <scene sceneID="Zk2-Tt-d7j">
+            <objects>
+                <viewController id="2Mp-6e-RCZ" customClass="ModuleAViewController" customModule="ImageLab" customModuleProvider="target" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="ohn-SE-Et7"/>
+                        <viewControllerLayoutGuide type="bottom" id="bn1-KX-oMl"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="bAK-he-bA4">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="812"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <mtkView contentMode="scaleToFill" colorPixelFormat="BGRA8Unorm" depthStencilPixelFormat="Depth32Float" translatesAutoresizingMaskIntoConstraints="NO" id="w7q-KN-wpr">
+                                <rect key="frame" x="0.0" y="94" width="375" height="612"/>
+                            </mtkView>
+                        </subviews>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="w7q-KN-wpr" firstAttribute="top" secondItem="ohn-SE-Et7" secondAttribute="bottom" id="IZY-M5-Erd"/>
+                            <constraint firstAttribute="trailing" secondItem="w7q-KN-wpr" secondAttribute="trailing" id="KcT-S1-NEq"/>
+                            <constraint firstItem="w7q-KN-wpr" firstAttribute="leading" secondItem="bAK-he-bA4" secondAttribute="leading" id="Nzr-gm-dKa"/>
+                            <constraint firstItem="bn1-KX-oMl" firstAttribute="top" secondItem="w7q-KN-wpr" secondAttribute="bottom" constant="72" id="vV3-nT-zCw"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" id="5mQ-7e-fYz"/>
+                    <connections>
+                        <outlet property="cameraView" destination="w7q-KN-wpr" id="svo-0m-h5M"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="oaH-gj-R4j" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="700" y="423.39901477832512"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="n8u-9q-Xtm">
@@ -174,7 +210,7 @@
                     </connections>
                 </swipeGestureRecognizer>
             </objects>
-            <point key="canvasLocation" x="605.60000000000002" y="429.31034482758622"/>
+            <point key="canvasLocation" x="-266" y="1139"/>
         </scene>
     </scenes>
     <resources>

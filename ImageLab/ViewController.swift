@@ -59,6 +59,26 @@ class ViewController: UIViewController   {
     }
     
     // MARK: Process Image Output
+//    func processFace(inputImage:CIImage) -> CIImage{
+//         //detect faces
+//        let f = getFaces(img: inputImage)
+//
+//         //if no faces, just return original image
+//        if f.count == 0 { return inputImage }
+//
+//        var retImage = inputImage
+//
+//        self.bridge.setImage(retImage,
+//                             withBounds: f[0].bounds, // the first face bounds
+//                             andContext: self.videoManager.getCIContext())
+//
+//        self.bridge.processImage()
+//        retImage = self.bridge.getImageComposite() // get back opencv processed part of the image (overlayed on original)
+//
+//        return retImage
+//    }
+    
+    
     func processImageSwift(inputImage:CIImage) -> CIImage{
         
         // detect faces
