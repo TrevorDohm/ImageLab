@@ -30,6 +30,7 @@ int currentIndex = 0;
 bool flash = false;
 int flashCooldownCounter = 60; // 2 Seconds (30 FPS Default)
 
+
 // Text Information
 char text[100];
 double fontScale = 3.5;
@@ -73,7 +74,7 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
         double avgRed = sumRed / 100.0;
 
         // Format the text string
-        sprintf(text, "Avg B: %.2f, G: %.2f, R: %.2f", avgBlue, avgGreen, avgRed);
+        sprintf(text, "Avg R: %.2f", avgRed);
         
         // Reset Current Index
         currentIndex = 0;
@@ -438,7 +439,9 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     CGContextRelease(contextRef);
     CGImageRelease(faceImageCG);
     
+    
 }
+
 
 -(CIImage*)getImage{
     

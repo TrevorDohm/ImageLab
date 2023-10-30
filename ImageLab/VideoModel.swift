@@ -17,7 +17,7 @@ class VideoModel: NSObject {
     private var filters : [CIFilter]! = nil
     private lazy var videoManager:VisionAnalgesic! = {
         let tmpManager = VisionAnalgesic(view: cameraView!)
-        tmpManager.setCameraPosition(position: .back)
+        tmpManager.setCameraPosition(position: .front)
         return tmpManager
     }()
     
@@ -49,7 +49,7 @@ class VideoModel: NSObject {
         
         self.setupFilters()
         
-        self.videoManager.setCameraPosition(position: .back)
+        self.videoManager.setCameraPosition(position: .front)
         self.videoManager.setProcessingBlock(newProcessBlock: self.processImage)
         
         if !videoManager.isRunning{
@@ -102,7 +102,9 @@ class VideoModel: NSObject {
     
     private func getFaces(img:CIImage) -> [CIFaceFeature]{
         // makes sure the image is the correct orientation
-        let optsFace = [CIDetectorImageOrientation:self.videoManager.ciOrientation]
+        let optsFace = [CIDetectorImageOrientation:self.videoManager.ciOrientation,
+                                   CIDetectorSmile: true,
+                                CIDetectorEyeBlink: true] as [String : Any] as [String : Any]
         // get Face Features
         return self.detector.features(in: img, options: optsFace) as! [CIFaceFeature]
     }

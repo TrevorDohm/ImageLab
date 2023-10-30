@@ -125,6 +125,7 @@ class ViewController: UIViewController   {
         // Process Finger
         let isFingerDetected = self.bridge.processFinger()
         
+        
         // Based On Return Value, Enable / Disable Buttons
         DispatchQueue.main.async {
             self.torchToggleButton.isEnabled = !isFingerDetected
