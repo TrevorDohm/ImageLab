@@ -132,7 +132,11 @@ class ViewController: UIViewController   {
         DispatchQueue.main.async {
             self.torchToggleButton.isEnabled = !isFingerDetected
             self.cameraToggleButton.isEnabled = !isFingerDetected
-            self.stageLabel.text = "Red Value: \(redValue)"
+            if isFingerDetected {
+                self.stageLabel.text = String(format: "Red Value: %.2f", redValue)
+            } else {
+                self.stageLabel.text = "Finger not detected"
+            }
         }
 
         // Toggle Flash Depending On Return
