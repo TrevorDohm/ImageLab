@@ -73,8 +73,6 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
         double avgGreen = sumGreen / 100.0;
         double avgRed = sumRed / 100.0;
 
-        // Format the text string
-        sprintf(text, "Avg R: %.2f", avgRed);
         
         // Reset Current Index
         currentIndex = 0;
@@ -130,6 +128,19 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     // Return Flash
     return flash;
     
+}
+
+-(double) getRedValue {
+    // Corrected Color Conversion
+    cv::Mat image_copy;
+    Scalar avgPixelIntensity;
+    cvtColor(_image, image_copy, CV_RGBA2BGR);
+    avgPixelIntensity = cv::mean( image_copy );
+    
+    double redValue = avgPixelIntensity.val[2];
+    //sprintf(text, "Red: %.2f", redValue);
+    
+    return redValue;
 }
 
 #pragma mark Define Custom Functions Here

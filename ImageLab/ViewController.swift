@@ -19,6 +19,7 @@ class ViewController: UIViewController   {
     var detector:CIDetector! = nil
     let bridge = OpenCVBridge()
     var isFlashManuallyControlled:Bool = false
+
     
     // MARK: View Outlets
     @IBOutlet weak var flashSlider: UISlider!
@@ -124,12 +125,14 @@ class ViewController: UIViewController   {
         
         // Process Finger
         let isFingerDetected = self.bridge.processFinger()
+        let redValue = self.bridge.getRedValue()
         
         
         // Based On Return Value, Enable / Disable Buttons
         DispatchQueue.main.async {
             self.torchToggleButton.isEnabled = !isFingerDetected
             self.cameraToggleButton.isEnabled = !isFingerDetected
+            self.stageLabel.text = "Red Value: \(redValue)"
         }
 
         // Toggle Flash Depending On Return

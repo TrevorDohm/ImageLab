@@ -28,6 +28,9 @@
 //get the image inside the original bounds
 -(CIImage*)getImageComposite;
 
+//Returns the value of the red color channel
+-(double) getRedValue;
+
 // call this to perfrom processing (user controlled for better transparency)
 -(void)processImage;
 
@@ -38,5 +41,6 @@
 
 // Process Finger Header Declaration
 -(bool)processFinger;
+
 
 @end
