@@ -66,6 +66,11 @@ class VideoModel: NSObject {
     //MARK: Setup filtering
     private func setupFilters(){
         filters = []
+        
+        let filterPinch = CIFilter(name:"CIBumpDistortion")!
+        filterPinch.setValue(-0.5, forKey: "inputScale")
+        filterPinch.setValue(75, forKey: "inputRadius")
+        filters.append(filterPinch)
     }
     
     //MARK: Apply filters and apply feature detectors
@@ -79,6 +84,14 @@ class VideoModel: NSObject {
             filterCenter.x = face.bounds.midX
             filterCenter.y = face.bounds.midY
             radius = Int(face.bounds.width/2) // for setting the radius of the bump
+            
+            for filt in filters{
+                filt.setValue(retImage, forKey: kCIInputImageKey)
+                filt.setValue(CIVector(cgPoint: filterCenter), forKey: "inputCenter")
+                filt.setValue(radius, forKey: "inputRadius")
+                //  also manipulate the radius of the filter based on face size!
+                retImage = filt.outputImage!
+            }
             
             if face.hasSmile {
                 print("Smiling detected!")
