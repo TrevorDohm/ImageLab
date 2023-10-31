@@ -9,8 +9,18 @@
 import UIKit
 import MetalKit
 
+extension CIFaceFeature{
+    var isBlinking: Bool{
+        return self.leftEyeClosed && self.rightEyeClosed
+    }
+}
+
+protocol VideoModelDelegate: class{
+    func didDetectBlink(blinkCount: Int)
+}
+
 class VideoModel: NSObject {
-    
+    weak var delegate: VideoModelDelegate?
     weak var cameraView:MTKView?
     
     //MARK: Class Properties
@@ -46,6 +56,10 @@ class VideoModel: NSObject {
         return detector
         
     }()
+    
+    private var eyeStateHistory = [Bool]()
+    
+    var blinkCount = 0
     
     init(view:MTKView){
         super.init()
@@ -91,16 +105,32 @@ class VideoModel: NSObject {
             
             if face.hasSmile {
                 print("Smiling detected!")
+                // Apply the CICircularWrap filter only when smiling
+                let circularWrapFilter = CIFilter(name: "CICircularWrap")!
+                circularWrapFilter.setValue(retImage, forKey: kCIInputImageKey)
+                circularWrapFilter.setValue(CIVector(cgPoint: filterCenter), forKey: "inputCenter")
+                circularWrapFilter.setValue(radius, forKey: "inputRadius")
+                retImage = circularWrapFilter.outputImage!
             }
             
-            //do for each filter (assumes all filters have property, "inputCenter")
-            for filt in filters{
-                filt.setValue(retImage, forKey: kCIInputImageKey)
-                filt.setValue(CIVector(cgPoint: filterCenter), forKey: "inputCenter")
-                filt.setValue(radius, forKey: "inputRadius")
-                //  also manipulate the radius of the filter based on face size!
-                retImage = filt.outputImage!
+            eyeStateHistory.append(face.isBlinking)
+            if eyeStateHistory.count > 3 && eyeStateHistory[eyeStateHistory.count-2] == true && eyeStateHistory.last == false{
+                print("You just blinked")
+                blinkCount += 1
+                // Notify the ModAViewController about the blink
+                delegate?.didDetectBlink(blinkCount: blinkCount)
+
             }
+                
+            
+            //do for each filter (assumes all filters have property, "inputCenter")
+//            for filt in filters{
+//                filt.setValue(retImage, forKey: kCIInputImageKey)
+//                filt.setValue(CIVector(cgPoint: filterCenter), forKey: "inputCenter")
+//                filt.setValue(radius, forKey: "inputRadius")
+//                //  also manipulate the radius of the filter based on face size!
+//                retImage = filt.outputImage!
+//            }
         }
         return retImage
     }
@@ -125,6 +155,7 @@ class VideoModel: NSObject {
         
         //otherwise apply the filters to the faces
         return applyFiltersToFaces(inputImage: inputImage, features: faces)
+        
     }
 
 }
