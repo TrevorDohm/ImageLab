@@ -39,7 +39,12 @@ class VideoModel: NSObject {
         
 //        let CIDetectorSmile: String
 //        let CIDetectorEyeBlink: String
+        
+        //CIBumpDistortion
+        //phones are 30 frames
+        
         return detector
+        
     }()
     
     init(view:MTKView){
