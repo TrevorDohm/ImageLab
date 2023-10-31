@@ -31,6 +31,9 @@
 //Returns the value of the red color channel
 -(double) getRedValue;
 
+//Returns an estimate of your Heart Rate (+/- 2 BPM)
+-(int) getBetsPerMinute;
+
 // call this to perfrom processing (user controlled for better transparency)
 -(void)processImage;
 

@@ -27,6 +27,7 @@ class ViewController: UIViewController   {
     @IBOutlet weak var cameraView: MTKView!
     @IBOutlet weak var torchToggleButton: UIButton!
     @IBOutlet weak var cameraToggleButton: UIButton!
+    @IBOutlet weak var bpmLabel: UILabel!
     
     // MARK: ViewController Hierarchy
     override func viewDidLoad() {
@@ -56,6 +57,8 @@ class ViewController: UIViewController   {
         if !videoManager.isRunning{
             videoManager.start()
         }
+        
+        startUpdatingBPM()
     
     }
     
@@ -79,6 +82,14 @@ class ViewController: UIViewController   {
 //        return retImage
 //    }
     
+    // This shows
+    func startUpdatingBPM() {
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+            let bpm = self.bridge.getBetsPerMinute() //calculates bpm in bridge
+            self.bpmLabel.text = "BPM: \(bpm)"
+        }
+    }
+
     
     func processImageSwift(inputImage:CIImage) -> CIImage{
         
