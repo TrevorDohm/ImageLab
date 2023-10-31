@@ -34,9 +34,10 @@ class ModuleAViewController: UIViewController, VideoModelDelegate {
     }
     
     func didDetectBlink(blinkCount: Int) {
-        DispatchQueue.main.async {
-            self.blinkLabel.text = "You have blinked: \(blinkCount)"
-        }
+//        DispatchQueue.main.async {
+        self.blinkLabel.text = "You have blinked: \(blinkCount)"
+//        }
+        print("updated label")
     }
     
 
