@@ -12,7 +12,6 @@ import MetalKit
 class ModuleAViewController: UIViewController, VideoModelDelegate {
     
     var videoModel:VideoModel? = nil
-    var blinkUpdateTimer: Timer?
     
     @IBOutlet weak var cameraView: MTKView!
     @IBOutlet weak var blinkLabel: UILabel!
@@ -34,12 +33,21 @@ class ModuleAViewController: UIViewController, VideoModelDelegate {
     }
     
     func didDetectBlink(blinkCount: Int) {
-//        DispatchQueue.main.async {
-        self.blinkLabel.text = "You have blinked: \(blinkCount)"
-//        }
+        DispatchQueue.main.async {
+            self.blinkLabel.text = "You have blinked: \(blinkCount)"
+        }
         print("updated label")
     }
     
+    deinit {
+        videoModel?.delegate = nil
+        print("ModuleAViewController Dealloc")
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        videoModel?.cleanup()
+    }
 
     /*
     // MARK: - Navigation

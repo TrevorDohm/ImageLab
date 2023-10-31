@@ -123,5 +123,12 @@ class VideoModel: NSObject {
         return applyFiltersToFaces(inputImage: inputImage, features: faces)
         
     }
-
+    
+    func cleanup() {
+        // Clean up any camera or Metal resources here
+        // For example, stop videoManager if it's running:
+        if videoManager.isRunning {
+            videoManager.stop()
+        }
+    }
 }
