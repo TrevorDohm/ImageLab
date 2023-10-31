@@ -54,15 +54,22 @@ class ViewController: UIViewController   {
             videoManager.start()
         }
         
+        self.bpmLabel.text = "Calculating BPM" 
+        
         startUpdatingBPM()
     }
     
     func startUpdatingBPM() {
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
-            let bpm = self.bridge.getBetsPerMinute()
-            self.bpmLabel.text = "BPM: \(bpm)"
+            let bpm = self.bridge.calculateBPM()
+            if bpm > -1 {
+                self.bpmLabel.text = "BPM: \(bpm)"
+            } else {
+                self.bpmLabel.text = "Calculating BPM"
+            }
         }
     }
+
     
     func processImageSwift(inputImage: CIImage) -> CIImage {
         
@@ -88,6 +95,9 @@ class ViewController: UIViewController   {
         } else {
             self.videoManager.turnOffFlash()
         }
+        
+        // Update values every frame
+        self.bridge.updateValues()
         
         retImage = self.bridge.getImageComposite()
         

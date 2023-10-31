@@ -159,8 +159,8 @@
                                     <outletCollection property="gestureRecognizers" destination="QBu-pj-Ata" appends="YES" id="kdI-Og-fi0"/>
                                 </connections>
                             </mtkView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="bpmLabel" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="r1g-DT-mZS">
-                                <rect key="frame" x="149" y="345" width="76" height="21"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="bpmLabel" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="r1g-DT-mZS">
+                                <rect key="frame" x="122" y="346" width="130" height="21"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="textColor"/>
@@ -206,7 +206,7 @@
                     </connections>
                 </swipeGestureRecognizer>
             </objects>
-            <point key="canvasLocation" x="-266.39999999999998" y="1138.6699507389162"/>
+            <point key="canvasLocation" x="-266.39999999999998" y="1137.9310344827586"/>
         </scene>
     </scenes>
     <resources>

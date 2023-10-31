@@ -31,8 +31,11 @@
 //Returns the value of the red color channel
 -(double) getRedValue;
 
-//Returns an estimate of your Heart Rate (+/- 2 BPM)
--(int) getBetsPerMinute;
+//Maintains a trailing 20 second record of the red and blue channels updated every frame
+-(void)updateValues;
+
+//Uses the values stored in updateValues to calculate the BPM - called once a second 
+-(int)calculateBPM;
 
 // call this to perfrom processing (user controlled for better transparency)
 -(void)processImage;

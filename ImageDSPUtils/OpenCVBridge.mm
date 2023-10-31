@@ -30,6 +30,13 @@ int currentIndex = 0;
 bool flash = false;
 int flashCooldownCounter = 60; // 2 Seconds (30 FPS Default)
 
+//Global Variables for Heart Beats per Minute detection
+const int WINDOW_SIZE = 20; //We're looking at the trailing 20 seconds
+const int SAMPLING_RATE = 30; //Number of samples per second
+
+std::vector<double> pastRedValues; // History of past red values
+std::vector<double> pastBlueValues; // History of past blue values
+
 
 // Text Information
 char text[100];
@@ -67,13 +74,6 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
             sumGreen += avgPixelIntensityGreen[i];
             sumRed += avgPixelIntensityRed[i];
         }
-
-        // Calculate Average Of Averages
-        double avgBlue = sumBlue / 100.0;
-        double avgGreen = sumGreen / 100.0;
-        double avgRed = sumRed / 100.0;
-
-        
         // Reset Current Index
         currentIndex = 0;
         
@@ -143,12 +143,8 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     return redValue;
 }
 
--(int) getBetsPerMinute {
-    const int WINDOW_SIZE = 20; // 20 seconds
-    const int SAMPLING_RATE = 60; // 60 samples per second
-    const int BEAT_WINDOW = 5; // A small window to average out values for beat detection
+-(void)updateValues {
     
-    // Corrected Color Conversion
     cv::Mat image_copy;
     Scalar avgPixelIntensity;
     cvtColor(_image, image_copy, CV_RGBA2BGR);
@@ -156,9 +152,6 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
 
     double redValue = avgPixelIntensity.val[2];
     double blueValue = avgPixelIntensity.val[0];
-
-    static std::vector<double> pastRedValues; // History of past red values
-    static std::vector<double> pastBlueValues; // History of past blue values
 
     // Save the current red and blue values
     pastRedValues.push_back(redValue);
@@ -169,6 +162,13 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
         pastRedValues.erase(pastRedValues.begin());
         pastBlueValues.erase(pastBlueValues.begin());
     }
+}
+
+-(int)calculateBPM {
+    const int BEAT_WINDOW = 5; // A small window to average out values for beat detection
+
+    
+    //pastRedValues and pastBlueValues retrieved from global scope
 
     int beatCount = 0;
 
@@ -181,16 +181,21 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
         }
         double avgRecentRed = sumRed / BEAT_WINDOW;
         double avgRecentBlue = sumBlue / BEAT_WINDOW;
-        if(pastRedValues[i] > 1.1 * avgRecentRed && pastBlueValues[i] < 0.9 * avgRecentBlue) {
+        if(pastRedValues[i] > 1.05 * avgRecentRed && pastBlueValues[i] < 0.95 * avgRecentBlue) {
             beatCount++;
         }
     }
 
     // Convert beat count over 20 seconds to beats per minute
-    int bpm = beatCount * (60 / WINDOW_SIZE);
+    int bpm = -1; //-1 is used so that if we don't have 20 seconds of data, still calculating message sent
+    if (pastRedValues.size() == WINDOW_SIZE * SAMPLING_RATE) {
+        bpm = beatCount * (60 / WINDOW_SIZE);
+    }
 
     return bpm;
 }
+
+
 
 
 #pragma mark Define Custom Functions Here
