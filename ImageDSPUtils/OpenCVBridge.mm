@@ -23,13 +23,19 @@ using namespace cv;
 @implementation OpenCVBridge
 
 // Global Variables (For Processing Finger Circularly)
-float avgPixelIntensityRed[100];
-float avgPixelIntensityGreen[100];
-float avgPixelIntensityBlue[100];
-int currentIndex = 0;
+
+const uint fps = 60;
+const uint secondsToFillBuffer = 30;
+const uint bufferSize = fps * secondsToFillBuffer;
+bool bufferIsFull = false;
+
+double avgPixelIntensityRed[bufferSize];
+float avgPixelIntensityGreen[bufferSize];
+float avgPixelIntensityBlue[bufferSize];
+
+size_t currentIndex = 0;
 bool flash = false;
 int flashCooldownCounter = 60; // 2 Seconds (30 FPS Default)
-
 
 // Text Information
 char text[100];
@@ -37,47 +43,16 @@ double fontScale = 3.5;
 int thickness = 2;
 int baseline = 0;
 cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickness, &baseline);
-
+//double redAvgs[60 * 30];
 #pragma mark === Write Your Code Here ===
 -(bool)processFinger{
-    
+    std::cout << "CurrIndex: " <<currentIndex <<std::endl;
     // Corrected Color Conversion
     cv::Mat image_copy;
     Scalar avgPixelIntensity;
     cvtColor(_image, image_copy, CV_RGBA2BGR);
     avgPixelIntensity = cv::mean( image_copy );
     
-    // Testing Output
-    // std::cout << avgPixelIntensity.val[0] << "\n";
-    // std::cout << avgPixelIntensity.val[1] << "\n";
-    // std::cout << avgPixelIntensity.val[2] << "\n\n";
-    
-    // When Index Reaches Maximum (100)
-    // std::cout << currentIndex << std::endl;
-    if (currentIndex >= 100) {
-        
-        // Initialize Sums
-        double sumBlue = 0.0;
-        double sumGreen = 0.0;
-        double sumRed = 0.0;
-
-        // Iterate Over Arrays, Sum Up Values
-        for (int i = 0; i < 100; i++) {
-            sumBlue += avgPixelIntensityBlue[i];
-            sumGreen += avgPixelIntensityGreen[i];
-            sumRed += avgPixelIntensityRed[i];
-        }
-
-        // Calculate Average Of Averages
-        double avgBlue = sumBlue / 100.0;
-        double avgGreen = sumGreen / 100.0;
-        double avgRed = sumRed / 100.0;
-
-        
-        // Reset Current Index
-        currentIndex = 0;
-        
-    }
     
     // Calculate Starting Position (BL Corner) For Centering
     cv::Point textOrg((image_copy.cols - textSize.width) / 16, (image_copy.rows + textSize.height) / 16);
@@ -114,7 +89,6 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     
     // Execute Only When Finger Over Camera
     if (flash) {
-        
         // Save Average Blue, Green, Red Values
         avgPixelIntensityBlue[currentIndex] = avgPixelIntensity.val[0];
         avgPixelIntensityGreen[currentIndex] = avgPixelIntensity.val[1];
@@ -122,6 +96,11 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
         
         // Increment Index
         currentIndex++;
+        if (currentIndex >= bufferSize) { //make sure we dont go out of bounds, will handle circular later
+            currentIndex = 0;
+            bufferIsFull = true;
+            
+        }
         
     }
     
@@ -130,66 +109,92 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     
 }
 
--(double) getRedValue {
-    // Corrected Color Conversion
-    cv::Mat image_copy;
-    Scalar avgPixelIntensity;
-    cvtColor(_image, image_copy, CV_RGBA2BGR);
-    avgPixelIntensity = cv::mean( image_copy );
-    
-    double redValue = avgPixelIntensity.val[2];
-    //sprintf(text, "Red: %.2f", redValue);
-    
-    return redValue;
+
+
+-(bool) isBPMReady {
+    return bufferIsFull;
 }
 
+
+
 -(int) getBetsPerMinute {
-    const int WINDOW_SIZE = 20; // 20 seconds
-    const int SAMPLING_RATE = 60; // 60 samples per second
-    const int BEAT_WINDOW = 5; // A small window to average out values for beat detection
+    const size_t WINDOW_LOOK_SIZE = 15; // NOTE THIS MEANS TO LOOK THAT MANY LEFT AND THAT MANY RIGHT
+    //IE. 3 means total window size of 7, the value, 3 to the left, and 3 to the right
     
-    // Corrected Color Conversion
-    cv::Mat image_copy;
-    Scalar avgPixelIntensity;
-    cvtColor(_image, image_copy, CV_RGBA2BGR);
-    avgPixelIntensity = cv::mean( image_copy );
-
-    double redValue = avgPixelIntensity.val[2];
-    double blueValue = avgPixelIntensity.val[0];
-
-    static std::vector<double> pastRedValues; // History of past red values
-    static std::vector<double> pastBlueValues; // History of past blue values
-
-    // Save the current red and blue values
-    pastRedValues.push_back(redValue);
-    pastBlueValues.push_back(blueValue);
-
-    // If we've stored more than WINDOW_SIZE * SAMPLING_RATE values, remove the oldest one
-    if(pastRedValues.size() > WINDOW_SIZE * SAMPLING_RATE) {
-        pastRedValues.erase(pastRedValues.begin());
-        pastBlueValues.erase(pastBlueValues.begin());
+    vector<float> buf(bufferSize); // Handle the circular nature of the buffer leveraging -5 % 7 = 2
+    for(int i=0; i < bufferSize; i ++) {
+        size_t idx =(currentIndex - i) % bufferSize;
+        buf[i] = avgPixelIntensityRed[idx];
     }
-
-    int beatCount = 0;
-
-    for(int i = BEAT_WINDOW; i < pastRedValues.size(); i++) {
-        double sumRed = 0.0;
-        double sumBlue = 0.0;
-        for(int j = i - BEAT_WINDOW; j < i; j++) {
-            sumRed += pastRedValues[j];
-            sumBlue += pastBlueValues[j];
+    
+    
+    size_t prevPeak = 0, peakDistSum = 0,numPeaks = 0;
+    for(size_t i = WINDOW_LOOK_SIZE; i < bufferSize - WINDOW_LOOK_SIZE; i ++) {
+        float _max = buf[i];
+        //Calculating max in window without vDSP because im too lazy to move accelerate in here
+        for(size_t j = i - WINDOW_LOOK_SIZE; j < i +WINDOW_LOOK_SIZE; j++) {
+            if(buf[j] > _max){
+                _max = buf[j];
+            }
         }
-        double avgRecentRed = sumRed / BEAT_WINDOW;
-        double avgRecentBlue = sumBlue / BEAT_WINDOW;
-        if(pastRedValues[i] > 1.1 * avgRecentRed && pastBlueValues[i] < 0.9 * avgRecentBlue) {
-            beatCount++;
+        if(_max == buf[i]) {// if the max is in the middle of window then we found a peak
+            peakDistSum += i - prevPeak;
+            prevPeak = i;
+            numPeaks += 1;
+            //TODO Maybe take the average peak dist and use that instead of num peaks
         }
     }
-
-    // Convert beat count over 20 seconds to beats per minute
-    int bpm = beatCount * (60 / WINDOW_SIZE);
-
+    int bpm = int((numPeaks/float(secondsToFillBuffer)) * fps);
+    int bpm2 = int(numPeaks * (fps/float(secondsToFillBuffer) ));
+    int bpm3 = int( ((float( peakDistSum) / float(numPeaks))/ fps));
     return bpm;
+    return 10;
+//    const int WINDOW_SIZE = 20; // 20 seconds
+//    const int SAMPLING_RATE = 60; // 60 samples per second
+//    const int BEAT_WINDOW = 5; // A small window to average out values for beat detection
+//
+//    // Corrected Color Conversion
+//    cv::Mat image_copy;
+//    Scalar avgPixelIntensity;
+//    cvtColor(_image, image_copy, CV_RGBA2BGR);
+//    avgPixelIntensity = cv::mean( image_copy );
+//
+//    double redValue = avgPixelIntensity.val[2];
+//    double blueValue = avgPixelIntensity.val[0];
+//
+//    static std::vector<double> pastRedValues; // History of past red values
+//    static std::vector<double> pastBlueValues; // History of past blue values
+//
+//    // Save the current red and blue values
+//    pastRedValues.push_back(redValue);
+//    pastBlueValues.push_back(blueValue);
+//
+//    // If we've stored more than WINDOW_SIZE * SAMPLING_RATE values, remove the oldest one
+//    if(pastRedValues.size() > WINDOW_SIZE * SAMPLING_RATE) {
+//        pastRedValues.erase(pastRedValues.begin());
+//        pastBlueValues.erase(pastBlueValues.begin());
+//    }
+//
+//    int beatCount = 0;
+//
+//    for(int i = BEAT_WINDOW; i < pastRedValues.size(); i++) {
+//        double sumRed = 0.0;
+//        double sumBlue = 0.0;
+//        for(int j = i - BEAT_WINDOW; j < i; j++) {
+//            sumRed += pastRedValues[j];
+//            sumBlue += pastBlueValues[j];
+//        }
+//        double avgRecentRed = sumRed / BEAT_WINDOW;
+//        double avgRecentBlue = sumBlue / BEAT_WINDOW;
+//        if(pastRedValues[i] > 1.1 * avgRecentRed && pastBlueValues[i] < 0.9 * avgRecentBlue) {
+//            beatCount++;
+//        }
+//    }
+//
+//    // Convert beat count over 20 seconds to beats per minute
+//    int bpm = beatCount * (60 / WINDOW_SIZE);
+//
+//    return bpm;
 }
 
 

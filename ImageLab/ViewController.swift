@@ -58,7 +58,7 @@ class ViewController: UIViewController   {
             videoManager.start()
         }
         
-        startUpdatingBPM()
+//        startUpdatingBPM()
     
     }
     
@@ -83,12 +83,13 @@ class ViewController: UIViewController   {
 //    }
     
     // This shows
-    func startUpdatingBPM() {
-        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
-            let bpm = self.bridge.getBetsPerMinute() //calculates bpm in bridge
-            self.bpmLabel.text = "BPM: \(bpm)"
-        }
-    }
+    ///Removed because I dont think a timer is correct. Should be in the VideoProcessor no?
+//    func startUpdatingBPM() {
+//        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+//            let bpm = self.bridge.getBetsPerMinute() //calculates bpm in bridge
+//            self.bpmLabel.text = "BPM: \(bpm)"
+//        }
+//    }
 
     
     func processImageSwift(inputImage:CIImage) -> CIImage{
@@ -136,19 +137,25 @@ class ViewController: UIViewController   {
         
         // Process Finger
         let isFingerDetected = self.bridge.processFinger()
-        let redValue = self.bridge.getRedValue()
         
         
         // Based On Return Value, Enable / Disable Buttons
-        DispatchQueue.main.async {
+//        DispatchQueue.main.async {
             self.torchToggleButton.isEnabled = !isFingerDetected
             self.cameraToggleButton.isEnabled = !isFingerDetected
             if isFingerDetected {
-                self.stageLabel.text = String(format: "Red Value: %.2f", redValue)
+                if (self.bridge.isBPMReady()) {
+                    self.bpmLabel.text = "BPM: \(self.bridge.getBetsPerMinute())"
+                    self.stageLabel.text = String(format: "Red Value: %.2f", 0)//Pplaceholder. to be BPM
+                } else {
+                    self.bpmLabel.text = "Leave Finger..."
+                }
+                
             } else {
                 self.stageLabel.text = "Finger not detected"
+                self.bpmLabel.text = "Please Place Finger Over Camera and Flash!"
             }
-        }
+//        }
 
         // Toggle Flash Depending On Return
         // Note: Only Change If Not Already Controlled

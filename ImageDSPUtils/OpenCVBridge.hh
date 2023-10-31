@@ -29,7 +29,8 @@
 -(CIImage*)getImageComposite;
 
 //Returns the value of the red color channel
--(double) getRedValue;
+
+-(bool) isBPMReady;
 
 //Returns an estimate of your Heart Rate (+/- 2 BPM)
 -(int) getBetsPerMinute;
