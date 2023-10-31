@@ -9,6 +9,7 @@ extension CIFaceFeature{
 
 protocol VideoModelDelegate: AnyObject{
     func didDetectBlink(blinkCount: Int)
+    func didProcessImage(_ processedImage: CIImage)
 }
 
 class VideoModel: NSObject {
@@ -110,19 +111,44 @@ class VideoModel: NSObject {
         return self.detector.features(in: img, options: optsFace) as! [CIFaceFeature]
     }
     
-    //MARK: Process image output
+//    //MARK: Process image output
     private func processImage(inputImage:CIImage) -> CIImage{
-        
+
         // detect faces
         let faces = getFaces(img: inputImage)
-        
+
         // if no faces, just return original image
         if faces.count == 0 { return inputImage }
-        
+
         //otherwise apply the filters to the faces
         return applyFiltersToFaces(inputImage: inputImage, features: faces)
-        
+
     }
+//    
+//    private func processImage(inputImage: CIImage) -> CIImage {
+//        // Perform the face detection and image processing in the background
+//        DispatchQueue.global(qos: .userInitiated).async {
+//            // Detect faces
+//            let faces = self.getFaces(img: inputImage)
+//
+//            // If no faces, just return the original image
+//            if faces.count == 0 {
+//                // Notify the delegate that the image processing is complete (no changes)
+//                self.delegate?.didProcessImage(inputImage)
+//                return
+//            }
+//
+//            // Apply the filters to the faces
+//            let filteredImage = self.applyFiltersToFaces(inputImage: inputImage, features: faces)
+//
+//            // Notify the delegate with the processed image
+//            //self.delegate?.didProcessImage(filteredImage)
+//        }
+//
+//        // Return the original image immediately
+//        return inputImage
+//    }
+
     
     func cleanup() {
         // Clean up any camera or Metal resources here

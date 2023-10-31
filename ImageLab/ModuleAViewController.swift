@@ -39,6 +39,12 @@ class ModuleAViewController: UIViewController, VideoModelDelegate {
         print("updated label")
     }
     
+    func didProcessImage(_ processedImage: CIImage){
+        DispatchQueue.main.async {
+            //return processedImage
+        }
+    }
+    
     deinit {
         videoModel?.delegate = nil
         print("ModuleAViewController Dealloc")
