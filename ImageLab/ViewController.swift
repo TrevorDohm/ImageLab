@@ -22,11 +22,11 @@ class ViewController: UIViewController   {
 
     
     // MARK: View Outlets
-    @IBOutlet weak var flashSlider: UISlider!
+//    @IBOutlet weak var flashSlider: UISlider!
     @IBOutlet weak var stageLabel: UILabel!
     @IBOutlet weak var cameraView: MTKView!
-    @IBOutlet weak var torchToggleButton: UIButton!
-    @IBOutlet weak var cameraToggleButton: UIButton!
+//    @IBOutlet weak var torchToggleButton: UIButton!
+//    @IBOutlet weak var cameraToggleButton: UIButton!
     @IBOutlet weak var bpmLabel: UILabel!
     
 // MARK: ViewController Hierarchy
@@ -113,18 +113,6 @@ class ViewController: UIViewController   {
             break
         }
         stageLabel.text = "Stage: \(self.bridge.processType)"
-    }
-    
-    @IBAction func flash(_ sender: AnyObject) {
-        print("Flash button tapped, but no action is implemented.")
-    }
-
-    @IBAction func switchCamera(_ sender: AnyObject) {
-        print("Camera toggle button tapped, but no action is implemented.")
-    }
-
-    @IBAction func setFlashLevel(_ sender: UISlider) {
-        print("Flash slider value changed to \(sender.value), but no action is implemented.")
     }
 }
 
