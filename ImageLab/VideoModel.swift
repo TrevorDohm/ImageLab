@@ -1,11 +1,3 @@
-//
-//  VideoModel.swift
-//  ImageLab
-//
-//  Created by William Landin on 10/30/23.
-//  Copyright © 2023 Eric Larson. All rights reserved.
-//
-
 import UIKit
 import MetalKit
 
@@ -15,7 +7,7 @@ extension CIFaceFeature{
     }
 }
 
-protocol VideoModelDelegate: class{
+protocol VideoModelDelegate: AnyObject{
     func didDetectBlink(blinkCount: Int)
 }
 
@@ -46,13 +38,6 @@ class VideoModel: NSObject {
         let detector = CIDetector(ofType: CIDetectorTypeFace,
                                   context: self.videoManager.getCIContext(), // perform on the GPU is possible
             options: (optsDetector as [String : AnyObject]))
-        
-//        let CIDetectorSmile: String
-//        let CIDetectorEyeBlink: String
-        
-        //CIBumpDistortion
-        //phones are 30 frames
-        
         return detector
         
     }()
@@ -80,15 +65,6 @@ class VideoModel: NSObject {
     //MARK: Setup filtering
     private func setupFilters(){
         filters = []
-        
-        // starting values for filter
-//        let filterPinch = CIFilter(name:"CIBumpDistortion")!
-//        filterPinch.setValue(-0.5, forKey: "inputScale")
-//        filterPinch.setValue(75, forKey: "inputRadius")
-//        filters.append(filterPinch)
-//
-        
-        
     }
     
     //MARK: Apply filters and apply feature detectors
@@ -121,16 +97,6 @@ class VideoModel: NSObject {
                 delegate?.didDetectBlink(blinkCount: blinkCount)
 
             }
-                
-            
-            //do for each filter (assumes all filters have property, "inputCenter")
-//            for filt in filters{
-//                filt.setValue(retImage, forKey: kCIInputImageKey)
-//                filt.setValue(CIVector(cgPoint: filterCenter), forKey: "inputCenter")
-//                filt.setValue(radius, forKey: "inputRadius")
-//                //  also manipulate the radius of the filter based on face size!
-//                retImage = filt.outputImage!
-//            }
         }
         return retImage
     }
