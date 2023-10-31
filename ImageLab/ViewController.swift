@@ -114,6 +114,16 @@ class ViewController: UIViewController   {
         }
         stageLabel.text = "Stage: \(self.bridge.processType)"
     }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        
+        if videoManager.isRunning {
+            videoManager.stop()
+        }
+        // Add any other cleanup or state reset logic if needed.
+    }
+
 }
 
 
