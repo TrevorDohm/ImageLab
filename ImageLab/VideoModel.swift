@@ -60,7 +60,9 @@ class VideoModel: NSObject {
         }
         
     }
-        
+    
+    private var blinkCooldownFrames = 0
+    
     // MARK: Apply Filters, Feature Detectors
     private func applyFiltersToFaces(inputImage:CIImage, features:[CIFaceFeature]) -> CIImage{
         
@@ -112,6 +114,7 @@ class VideoModel: NSObject {
 
             // Highlight Mouth
             // Define a mouth rect (you may need to adjust the width and height values to best fit the mouth area)
+            
             let mouthWidth: CGFloat = 100.0
             let mouthHeight: CGFloat = 100.0
             let mouthRect = CGRect(x: face.mouthPosition.x - mouthWidth / 2,
@@ -135,26 +138,65 @@ class VideoModel: NSObject {
                 retImage = compositeFilter.outputImage!
             }
             
+            // Apply Pinch Filter Only When Smiling
             if face.hasSmile {
-                print("Smiling detected!")
-                // Apply the CICircularWrap filter only when smiling
-                let circularWrapFilter = CIFilter(name: "CICircularWrap")!
-                circularWrapFilter.setValue(retImage, forKey: kCIInputImageKey)
-                circularWrapFilter.setValue(CIVector(cgPoint: filterCenter), forKey: "inputCenter")
-                circularWrapFilter.setValue(radius, forKey: "inputRadius")
-                retImage = circularWrapFilter.outputImage!
+                
+                // Pinch Filter Image
+                let pinchFilter = CIFilter(name:"CIBumpDistortion")!
+                pinchFilter.setValue(-1.0, forKey: "inputScale")
+                pinchFilter.setValue(radius, forKey: "inputRadius")
+                pinchFilter.setValue(CIVector(cgPoint: filterCenter), forKey: "inputCenter")
+                pinchFilter.setValue(retImage.cropped(to: adjustedFaceBounds), forKey: kCIInputImageKey)
+                let pinchImage = pinchFilter.outputImage!
+                
+                // Compositing
+                let compositeFilter = CIFilter(name: "CISourceOverCompositing")!
+                compositeFilter.setValue(pinchImage, forKey: kCIInputImageKey) // Top Image
+                compositeFilter.setValue(retImage, forKey: kCIInputBackgroundImageKey) // Background
+                retImage = compositeFilter.outputImage!
+                
             }
             
+            // If we're in a cooldown period, decrement the cooldown and skip detection
+            if blinkCooldownFrames > 0 {
+                blinkCooldownFrames -= 1
+                return retImage
+            }
+            
+            // Add Latest Eye State To History
             eyeStateHistory.append(face.isBlinking)
-            if eyeStateHistory.count > 3 && eyeStateHistory[eyeStateHistory.count-2] == true && eyeStateHistory.last == false{
-                print("You just blinked")
-                blinkCount += 1
-                // Notify the ModAViewController about the blink
-                delegate?.didDetectBlink(blinkCount: blinkCount)
+            
+            // Limit History To Last 20 Frames
+            if eyeStateHistory.count > 10 {
+                eyeStateHistory.removeFirst()
+            }
 
+            // Check For Blink Pattern
+            if eyeStateHistory.count == 10 {
+
+                // Count the number of frames where the eyes were closed
+                let closedEyesCount = eyeStateHistory.filter { $0 == true }.count
+                
+                // If eyes were closed for 3 to 5 frames (which is a typical blink duration) amidst a 20-frame sequence,
+                // we consider it a blink. These numbers can be tweaked.
+                if closedEyesCount >= 3 && closedEyesCount <= 7 {
+                    
+                    // Blink Detected
+                    blinkCount += 1
+                    delegate?.didDetectBlink(blinkCount: blinkCount)
+                    
+                    // Set the cooldown frames to prevent another blink from being detected immediately
+                    blinkCooldownFrames = 10
+                    
+                    // Clear the history to prevent multiple detections for the same blink
+                    eyeStateHistory.removeAll()
+                    
+                }
             }
         }
+        
         return retImage
+        
     }
     
     private func getFaces(img:CIImage) -> [CIFaceFeature]{
