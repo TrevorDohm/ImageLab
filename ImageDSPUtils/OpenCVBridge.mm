@@ -18,6 +18,7 @@ using namespace cv;
 @property (nonatomic) CGAffineTransform transform;
 @property (nonatomic) CGAffineTransform inverseTransform;
 @property (atomic) cv::CascadeClassifier classifier;
+@property (atomic) double *avgPixelIntensityRed;
 @end
 
 @implementation OpenCVBridge
@@ -29,7 +30,7 @@ const uint secondsToFillBuffer = 30;
 const uint bufferSize = fps * secondsToFillBuffer;
 bool bufferIsFull = false;
 
-double avgPixelIntensityRed[bufferSize];
+//double avgPixelIntensityRed[bufferSize];
 float avgPixelIntensityGreen[bufferSize];
 float avgPixelIntensityBlue[bufferSize];
 
@@ -92,7 +93,7 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
         // Save Average Blue, Green, Red Values
         avgPixelIntensityBlue[currentIndex] = avgPixelIntensity.val[0];
         avgPixelIntensityGreen[currentIndex] = avgPixelIntensity.val[1];
-        avgPixelIntensityRed[currentIndex] = avgPixelIntensity.val[2];
+        self.avgPixelIntensityRed[currentIndex] = std::ceil(avgPixelIntensity.val[2] * 100)/100.0;
         
         // Increment Index
         currentIndex++;
@@ -121,16 +122,20 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     const size_t WINDOW_LOOK_SIZE = 15; // NOTE THIS MEANS TO LOOK THAT MANY LEFT AND THAT MANY RIGHT
     //IE. 3 means total window size of 7, the value, 3 to the left, and 3 to the right
     
-    vector<float> buf(bufferSize); // Handle the circular nature of the buffer leveraging -5 % 7 = 2
+    vector<double> _buf(bufferSize);
+    vector<double> buf;
     for(int i=0; i < bufferSize; i ++) {
-        size_t idx =(currentIndex - i) % bufferSize;
-        buf[i] = avgPixelIntensityRed[idx];
+        size_t idx =(currentIndex + i + 1) % bufferSize;
+        _buf[i] = self.avgPixelIntensityRed[idx];
+        if (i %2 ==0 ){
+            buf.push_back(self.avgPixelIntensityRed[idx]);
+        }
     }
     
     
     size_t prevPeak = 0, peakDistSum = 0,numPeaks = 0;
     for(size_t i = WINDOW_LOOK_SIZE; i < bufferSize - WINDOW_LOOK_SIZE; i ++) {
-        float _max = buf[i];
+        double _max = buf[i];
         //Calculating max in window without vDSP because im too lazy to move accelerate in here
         for(size_t j = i - WINDOW_LOOK_SIZE; j < i +WINDOW_LOOK_SIZE; j++) {
             if(buf[j] > _max){
@@ -144,7 +149,7 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
             //TODO Maybe take the average peak dist and use that instead of num peaks
         }
     }
-    int bpm = int((numPeaks/float(secondsToFillBuffer)) * fps);
+    int bpm = int(numPeaks * 60 /secondsToFillBuffer);
     int bpm2 = int(numPeaks * (fps/float(secondsToFillBuffer) ));
     int bpm3 = int( ((float( peakDistSum) / float(numPeaks))/ fps));
     return bpm;
@@ -449,7 +454,7 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     if(self != nil){
         //self.transform = CGAffineTransformMakeRotation(M_PI_2);
         //self.transform = CGAffineTransformScale(self.transform, -1.0, 1.0);
-        
+        self.avgPixelIntensityRed = new double[bufferSize];
         //self.inverseTransform = CGAffineTransformMakeScale(-1.0,1.0);
         //self.inverseTransform = CGAffineTransformRotate(self.inverseTransform, -M_PI_2);
         self.transform = CGAffineTransformIdentity;
@@ -459,6 +464,9 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     return self;
 }
 
+-(void)dealloc{
+    delete[] self.avgPixelIntensityRed; //No memory Leaks
+}
 #pragma mark Bridging OpenCV/CI Functions
 // code manipulated from
 // http://stackoverflow.com/questions/30867351/best-way-to-create-a-mat-from-a-ciimage
