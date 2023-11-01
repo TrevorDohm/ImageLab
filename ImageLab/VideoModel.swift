@@ -139,6 +139,35 @@ class VideoModel: NSObject {
             }
             
             // Apply Pinch Filter Only When Smiling
+            if let face = features.first {
+                let faceAngle = face.faceAngle
+//                if abs(faceAngle) < Float(Double.pi) / 4 {
+//                            // Face is approximately straight (not rotated much)
+//                            if faceAngle > 0 {
+//                                // Face is looking to the right
+//                                print("looking Right")
+//                            } else {
+//                                // Face is looking to the left
+//                                print("looking left")
+//                            }
+//                        } else {
+//                            // Face is rotated significantly
+//                            if faceAngle > 0 {
+//                                print("looking up")
+//                                // Face is looking up
+//                            } else {
+//                                print("looking down")
+//                                // Face is looking down
+//                            }
+//                        }
+                print(faceAngle)
+                //                    let rollAngle = face.rollAngle
+                //                    let pitchAngle = face.pitchAngle
+                //                    let yawAngle = face.yawAngle
+                //print(faceAngle)
+                //print("Roll:\(rollAngle) , Pitch:\(pitchAngle), Yaw:\(yawAngle) ")
+            }
+            
             if face.hasSmile {
                 
                 // Pinch Filter Image
