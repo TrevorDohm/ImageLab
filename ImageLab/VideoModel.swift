@@ -138,9 +138,8 @@ class VideoModel: NSObject {
                 retImage = compositeFilter.outputImage!
             }
             
-            // Apply Pinch Filter Only When Smiling
-            if let face = features.first {
-                let faceAngle = face.faceAngle
+//            if let face = features.first {
+//                let faceAngle = face.faceAngle
 //                if abs(faceAngle) < Float(Double.pi) / 4 {
 //                            // Face is approximately straight (not rotated much)
 //                            if faceAngle > 0 {
@@ -160,14 +159,15 @@ class VideoModel: NSObject {
 //                                // Face is looking down
 //                            }
 //                        }
-                print(faceAngle)
+//                print(faceAngle)
                 //                    let rollAngle = face.rollAngle
                 //                    let pitchAngle = face.pitchAngle
                 //                    let yawAngle = face.yawAngle
                 //print(faceAngle)
                 //print("Roll:\(rollAngle) , Pitch:\(pitchAngle), Yaw:\(yawAngle) ")
-            }
-            
+//            }
+
+            // Apply Pinch Filter Only When Smiling
             if face.hasSmile {
                 
                 // Pinch Filter Image
@@ -186,7 +186,7 @@ class VideoModel: NSObject {
                 
             }
             
-            // If we're in a cooldown period, decrement the cooldown and skip detection
+            // If Cooldown, Decrement Cooldown, Skip Blink Detection
             if blinkCooldownFrames > 0 {
                 blinkCooldownFrames -= 1
                 return retImage
