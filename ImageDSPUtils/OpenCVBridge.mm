@@ -93,7 +93,7 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
         // Save Average Blue, Green, Red Values
         avgPixelIntensityBlue[currentIndex] = avgPixelIntensity.val[0];
         avgPixelIntensityGreen[currentIndex] = avgPixelIntensity.val[1];
-        self.avgPixelIntensityRed[currentIndex] = std::ceil(avgPixelIntensity.val[2] * 100)/100.0;
+        self.avgPixelIntensityRed[currentIndex] = avgPixelIntensity.val[2];
         
         // Increment Index
         currentIndex++;
@@ -125,14 +125,10 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     const size_t WINDOW_LOOK_SIZE = 15; // NOTE THIS MEANS TO LOOK THAT MANY LEFT AND THAT MANY RIGHT
     //IE. 3 means total window size of 7, the value, 3 to the left, and 3 to the right
     
-    vector<double> _buf(bufferSize);
-    vector<double> buf;
+    vector<double> buf(bufferSize);
     for(int i=0; i < bufferSize; i ++) {
         size_t idx =(currentIndex + i + 1) % bufferSize;
-        _buf[i] = self.avgPixelIntensityRed[idx];
-        if (i %2 ==0 ){
-            buf.push_back(self.avgPixelIntensityRed[idx]);
-        }
+        buf[i] = self.avgPixelIntensityRed[idx];
     }
     
     
