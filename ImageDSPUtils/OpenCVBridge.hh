@@ -11,22 +11,30 @@
 #import "AVFoundation/AVFoundation.h"
 
 #import "PrefixHeader.pch"
-
 @interface OpenCVBridge : NSObject
 
 @property (nonatomic) NSInteger processType;
-
-
+@property (atomic) double *avgPixelIntensityRed;
+@property (atomic) double *ppg;
 // set the image for processing later
 -(void) setImage:(CIImage*)ciFrameImage
       withBounds:(CGRect)rect
       andContext:(CIContext*)context;
 
+-(int) getBufferSize;
+//-(NSMutableArray) getColorBuffer;
 //get the image raw opencv
 -(CIImage*)getImage;
 
 //get the image inside the original bounds
 -(CIImage*)getImageComposite;
+
+//Returns the value of the red color channel
+
+-(bool) isBPMReady;
+
+//Returns an estimate of your Heart Rate (+/- 2 BPM)
+-(int) getBetsPerMinute;
 
 // call this to perfrom processing (user controlled for better transparency)
 -(void)processImage;
@@ -38,5 +46,6 @@
 
 // Process Finger Header Declaration
 -(bool)processFinger;
+
 
 @end

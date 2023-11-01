@@ -19,6 +19,11 @@ class ViewController: UIViewController   {
     var detector:CIDetector! = nil
     let bridge = OpenCVBridge()
     var isFlashManuallyControlled:Bool = false
+
+    @IBOutlet weak var graphView: UIView!
+    lazy var graph:MetalGraph? = {
+        return MetalGraph(userView: self.graphView)
+    }()
     
     // MARK: View Outlets
     @IBOutlet weak var flashSlider: UISlider!
@@ -26,19 +31,26 @@ class ViewController: UIViewController   {
     @IBOutlet weak var cameraView: MTKView!
     @IBOutlet weak var torchToggleButton: UIButton!
     @IBOutlet weak var cameraToggleButton: UIButton!
+    @IBOutlet weak var bpmLabel: UILabel!
+    
+    var bpmTimer: Timer?
+    var currBpm:Int32 = -1
     
     // MARK: ViewController Hierarchy
     override func viewDidLoad() {
         super.viewDidLoad()
         
         self.view.backgroundColor = nil
-        
+        graph?.addGraph(withName: "bpm",
+            shouldNormalizeForFFT: true,
+                        numPointsInGraph: Int(self.bridge.getBufferSize()))
+
         // setup the OpenCV bridge nose detector, from file
         self.bridge.loadHaarCascade(withFilename: "nose")
         
         self.videoManager = VisionAnalgesic(view: self.cameraView)
         self.videoManager.setCameraPosition(position: AVCaptureDevice.Position.back)
-        
+        self.videoManager.setFPS(desiredFrameRate: 30)
         // create dictionary for face detection
         // HINT: you need to manipulate these properties for better face detection efficiency
         let optsDetector = [CIDetectorAccuracy:CIDetectorAccuracyHigh,
@@ -52,12 +64,43 @@ class ViewController: UIViewController   {
         
         self.videoManager.setProcessingBlock(newProcessBlock: self.processImageSwift)
         
+        bpmTimer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.bpmUpdater), userInfo: nil, repeats: true)
         if !videoManager.isRunning{
             videoManager.start()
         }
+        Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { _ in
+            self.updateGraphView()
+        }
+        
+//        startUpdatingBPM()
     
     }
+    func logC(val: Double, forBase base: Double) -> Double {
+        return log(val)/log(base)
+    }
     
+    @objc func updateGraphView() {
+        var theArray:[Float] = []
+        for i in 0...Int(self.bridge.getBufferSize()){
+//            theArray.append(Float(logC(val:self.bridge.avgPixelIntensityRed[i], forBase:200.0)))
+//            if self.bridge.avgPixelIntensityRed[i] > 200.0{
+            theArray.append(Float(self.bridge.ppg[i]))
+//            } else {
+//                theArray.append(0)
+//            }
+            
+        }
+        
+        
+        self.graph?.updateGraph(
+            data: theArray,
+            forKey: "bpm"
+        )
+    }
+        
+    @objc func bpmUpdater() {
+        self.currBpm = self.bridge.getBetsPerMinute()
+    }
     // MARK: Process Image Output
 //    func processFace(inputImage:CIImage) -> CIImage{
 //         //detect faces
@@ -78,6 +121,15 @@ class ViewController: UIViewController   {
 //        return retImage
 //    }
     
+    // This shows
+    ///Removed because I dont think a timer is correct. Should be in the VideoProcessor no?
+//    func startUpdatingBPM() {
+//        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+//            let bpm = self.bridge.getBetsPerMinute() //calculates bpm in bridge
+//            self.bpmLabel.text = "BPM: \(bpm)"
+//        }
+//    }
+
     
     func processImageSwift(inputImage:CIImage) -> CIImage{
         
@@ -125,11 +177,25 @@ class ViewController: UIViewController   {
         // Process Finger
         let isFingerDetected = self.bridge.processFinger()
         
+        
         // Based On Return Value, Enable / Disable Buttons
-        DispatchQueue.main.async {
+//        DispatchQueue.main.async {
             self.torchToggleButton.isEnabled = !isFingerDetected
             self.cameraToggleButton.isEnabled = !isFingerDetected
-        }
+            if currBpm != -1 {
+                self.bpmLabel.text = "BPM: \(self.currBpm)"
+                
+            } else {
+                if !isFingerDetected{
+                    self.stageLabel.text = "Finger not detected"
+                    self.bpmLabel.text = "Please Place Finger Over Camera and Flash!"
+                } else {
+                    //TODO make a loading bar
+                    self.bpmLabel.text = "Hold finger..."
+                }
+                
+            }
+//        }
 
         // Toggle Flash Depending On Return
         // Note: Only Change If Not Already Controlled

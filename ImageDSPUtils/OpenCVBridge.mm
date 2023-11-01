@@ -18,15 +18,23 @@ using namespace cv;
 @property (nonatomic) CGAffineTransform transform;
 @property (nonatomic) CGAffineTransform inverseTransform;
 @property (atomic) cv::CascadeClassifier classifier;
+
 @end
 
 @implementation OpenCVBridge
 
 // Global Variables (For Processing Finger Circularly)
-float avgPixelIntensityRed[100];
-float avgPixelIntensityGreen[100];
-float avgPixelIntensityBlue[100];
-int currentIndex = 0;
+
+const uint fps = 30;
+const uint secondsToFillBuffer = 30;
+const uint bufferSize = fps * secondsToFillBuffer;
+bool bufferIsFull = false;
+
+//double avgPixelIntensityRed[bufferSize];
+float avgPixelIntensityGreen[bufferSize];
+float avgPixelIntensityBlue[bufferSize];
+
+size_t currentIndex = 0;
 bool flash = false;
 int flashCooldownCounter = 60; // 2 Seconds (30 FPS Default)
 
@@ -36,49 +44,16 @@ double fontScale = 3.5;
 int thickness = 2;
 int baseline = 0;
 cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickness, &baseline);
-
+//double redAvgs[60 * 30];
 #pragma mark === Write Your Code Here ===
 -(bool)processFinger{
-    
+    std::cout << "CurrIndex: " <<currentIndex <<std::endl;
     // Corrected Color Conversion
     cv::Mat image_copy;
     Scalar avgPixelIntensity;
     cvtColor(_image, image_copy, CV_RGBA2BGR);
     avgPixelIntensity = cv::mean( image_copy );
     
-    // Testing Output
-    // std::cout << avgPixelIntensity.val[0] << "\n";
-    // std::cout << avgPixelIntensity.val[1] << "\n";
-    // std::cout << avgPixelIntensity.val[2] << "\n\n";
-    
-    // When Index Reaches Maximum (100)
-    // std::cout << currentIndex << std::endl;
-    if (currentIndex >= 100) {
-        
-        // Initialize Sums
-        double sumBlue = 0.0;
-        double sumGreen = 0.0;
-        double sumRed = 0.0;
-
-        // Iterate Over Arrays, Sum Up Values
-        for (int i = 0; i < 100; i++) {
-            sumBlue += avgPixelIntensityBlue[i];
-            sumGreen += avgPixelIntensityGreen[i];
-            sumRed += avgPixelIntensityRed[i];
-        }
-
-        // Calculate Average Of Averages
-        double avgBlue = sumBlue / 100.0;
-        double avgGreen = sumGreen / 100.0;
-        double avgRed = sumRed / 100.0;
-
-        // Format the text string
-        sprintf(text, "Avg B: %.2f, G: %.2f, R: %.2f", avgBlue, avgGreen, avgRed);
-        
-        // Reset Current Index
-        currentIndex = 0;
-        
-    }
     
     // Calculate Starting Position (BL Corner) For Centering
     cv::Point textOrg((image_copy.cols - textSize.width) / 16, (image_copy.rows + textSize.height) / 16);
@@ -115,14 +90,18 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     
     // Execute Only When Finger Over Camera
     if (flash) {
-        
         // Save Average Blue, Green, Red Values
         avgPixelIntensityBlue[currentIndex] = avgPixelIntensity.val[0];
         avgPixelIntensityGreen[currentIndex] = avgPixelIntensity.val[1];
-        avgPixelIntensityRed[currentIndex] = avgPixelIntensity.val[2];
+        self.avgPixelIntensityRed[currentIndex] = avgPixelIntensity.val[2];
         
         // Increment Index
         currentIndex++;
+        if (currentIndex >= bufferSize) { //make sure we dont go out of bounds, will handle circular later
+            currentIndex = 0;
+            bufferIsFull = true;
+            
+        }
         
     }
     
@@ -130,6 +109,106 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     return flash;
     
 }
+
+
+
+-(bool) isBPMReady {
+    return bufferIsFull;
+}
+
+
+-(int) getBufferSize {
+    return bufferSize;
+}
+
+
+
+-(int) getBetsPerMinute {
+    if(!bufferIsFull) {
+        return -1;
+    }
+    const size_t WINDOW_LOOK_SIZE = 13; // NOTE THIS MEANS TO LOOK THAT MANY LEFT AND THAT MANY RIGHT
+    //IE. 3 means total window size of 7, the value, 3 to the left, and 3 to the right
+    
+    vector<double> buf(bufferSize);
+    for(int i=0; i < bufferSize; i ++) {
+        size_t idx =(currentIndex + i + 1) % bufferSize;
+        buf[i] = self.avgPixelIntensityRed[idx];
+    }
+    
+    
+    size_t prevPeak = 0, peakDistSum = 0,numPeaks = 0;
+    for(size_t i = WINDOW_LOOK_SIZE; i < bufferSize - WINDOW_LOOK_SIZE; i ++) {
+        double _max = buf[i];
+        //Calculating max in window without vDSP because im too lazy to move accelerate in here
+        for(size_t j = i - WINDOW_LOOK_SIZE; j < i +WINDOW_LOOK_SIZE; j++) {
+            if(buf[j] > _max){
+                _max = buf[j];
+            }
+        }
+        if(_max == buf[i]) {// if the max is in the middle of window then we found a peak
+            peakDistSum += i - prevPeak;
+            self.ppg[i] = buf[i]/15;
+            prevPeak = i;
+            numPeaks += 1;
+            //TODO Maybe take the average peak dist and use that instead of num peaks
+        } else {
+            self.ppg[i] = buf[i]/30;
+        }
+    }
+    int bpm = int(numPeaks * 60 /secondsToFillBuffer);
+    int bpm2 = int(numPeaks * (fps/float(secondsToFillBuffer) ));
+    int bpm3 = int( ((float( peakDistSum) / float(numPeaks))/ fps));
+    return bpm;
+    return 10;
+//    const int WINDOW_SIZE = 20; // 20 seconds
+//    const int SAMPLING_RATE = 60; // 60 samples per second
+//    const int BEAT_WINDOW = 5; // A small window to average out values for beat detection
+//
+//    // Corrected Color Conversion
+//    cv::Mat image_copy;
+//    Scalar avgPixelIntensity;
+//    cvtColor(_image, image_copy, CV_RGBA2BGR);
+//    avgPixelIntensity = cv::mean( image_copy );
+//
+//    double redValue = avgPixelIntensity.val[2];
+//    double blueValue = avgPixelIntensity.val[0];
+//
+//    static std::vector<double> pastRedValues; // History of past red values
+//    static std::vector<double> pastBlueValues; // History of past blue values
+//
+//    // Save the current red and blue values
+//    pastRedValues.push_back(redValue);
+//    pastBlueValues.push_back(blueValue);
+//
+//    // If we've stored more than WINDOW_SIZE * SAMPLING_RATE values, remove the oldest one
+//    if(pastRedValues.size() > WINDOW_SIZE * SAMPLING_RATE) {
+//        pastRedValues.erase(pastRedValues.begin());
+//        pastBlueValues.erase(pastBlueValues.begin());
+//    }
+//
+//    int beatCount = 0;
+//
+//    for(int i = BEAT_WINDOW; i < pastRedValues.size(); i++) {
+//        double sumRed = 0.0;
+//        double sumBlue = 0.0;
+//        for(int j = i - BEAT_WINDOW; j < i; j++) {
+//            sumRed += pastRedValues[j];
+//            sumBlue += pastBlueValues[j];
+//        }
+//        double avgRecentRed = sumRed / BEAT_WINDOW;
+//        double avgRecentBlue = sumBlue / BEAT_WINDOW;
+//        if(pastRedValues[i] > 1.1 * avgRecentRed && pastBlueValues[i] < 0.9 * avgRecentBlue) {
+//            beatCount++;
+//        }
+//    }
+//
+//    // Convert beat count over 20 seconds to beats per minute
+//    int bpm = beatCount * (60 / WINDOW_SIZE);
+//
+//    return bpm;
+}
+
 
 #pragma mark Define Custom Functions Here
 -(void)processImage{
@@ -382,16 +461,20 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     if(self != nil){
         //self.transform = CGAffineTransformMakeRotation(M_PI_2);
         //self.transform = CGAffineTransformScale(self.transform, -1.0, 1.0);
-        
+        self.avgPixelIntensityRed = new double[bufferSize];
         //self.inverseTransform = CGAffineTransformMakeScale(-1.0,1.0);
         //self.inverseTransform = CGAffineTransformRotate(self.inverseTransform, -M_PI_2);
         self.transform = CGAffineTransformIdentity;
         self.inverseTransform = CGAffineTransformIdentity;
-        
+        self.ppg = new double[bufferSize];
     }
     return self;
 }
 
+-(void)dealloc{
+    delete[] self.avgPixelIntensityRed; //No memory Leaks
+    delete[] self.ppg;
+}
 #pragma mark Bridging OpenCV/CI Functions
 // code manipulated from
 // http://stackoverflow.com/questions/30867351/best-way-to-create-a-mat-from-a-ciimage
@@ -438,7 +521,9 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     CGContextRelease(contextRef);
     CGImageRelease(faceImageCG);
     
+    
 }
+
 
 -(CIImage*)getImage{
     
