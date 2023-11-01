@@ -29,6 +29,9 @@ class ViewController: UIViewController   {
     @IBOutlet weak var cameraToggleButton: UIButton!
     @IBOutlet weak var bpmLabel: UILabel!
     
+    var bpmTimer: Timer?
+    var currBpm:Int32 = -1
+    
     // MARK: ViewController Hierarchy
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -40,7 +43,7 @@ class ViewController: UIViewController   {
         
         self.videoManager = VisionAnalgesic(view: self.cameraView)
         self.videoManager.setCameraPosition(position: AVCaptureDevice.Position.back)
-        
+        self.videoManager.setFPS(desiredFrameRate: 30)
         // create dictionary for face detection
         // HINT: you need to manipulate these properties for better face detection efficiency
         let optsDetector = [CIDetectorAccuracy:CIDetectorAccuracyHigh,
@@ -54,6 +57,7 @@ class ViewController: UIViewController   {
         
         self.videoManager.setProcessingBlock(newProcessBlock: self.processImageSwift)
         
+        bpmTimer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.bpmUpdater), userInfo: nil, repeats: true)
         if !videoManager.isRunning{
             videoManager.start()
         }
@@ -61,7 +65,9 @@ class ViewController: UIViewController   {
 //        startUpdatingBPM()
     
     }
-    
+    @objc func bpmUpdater() {
+        self.currBpm = self.bridge.getBetsPerMinute()
+    }
     // MARK: Process Image Output
 //    func processFace(inputImage:CIImage) -> CIImage{
 //         //detect faces
@@ -143,17 +149,18 @@ class ViewController: UIViewController   {
 //        DispatchQueue.main.async {
             self.torchToggleButton.isEnabled = !isFingerDetected
             self.cameraToggleButton.isEnabled = !isFingerDetected
-            if isFingerDetected {
-                if (self.bridge.isBPMReady()) {
-                    self.bpmLabel.text = "BPM: \(self.bridge.getBetsPerMinute())"
-                    self.stageLabel.text = String(format: "Red Value: %.2f", 0)//Pplaceholder. to be BPM
-                } else {
-                    self.bpmLabel.text = "Leave Finger..."
-                }
+            if currBpm != -1 {
+                self.bpmLabel.text = "BPM: \(self.currBpm)"
                 
             } else {
-                self.stageLabel.text = "Finger not detected"
-                self.bpmLabel.text = "Please Place Finger Over Camera and Flash!"
+                if !isFingerDetected{
+                    self.stageLabel.text = "Finger not detected"
+                    self.bpmLabel.text = "Please Place Finger Over Camera and Flash!"
+                } else {
+                    //TODO make a loading bar
+                    self.bpmLabel.text = "Hold finger..."
+                }
+                
             }
 //        }
 

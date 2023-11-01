@@ -25,7 +25,7 @@ using namespace cv;
 
 // Global Variables (For Processing Finger Circularly)
 
-const uint fps = 60;
+const uint fps = 30;
 const uint secondsToFillBuffer = 30;
 const uint bufferSize = fps * secondsToFillBuffer;
 bool bufferIsFull = false;
@@ -119,6 +119,9 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
 
 
 -(int) getBetsPerMinute {
+    if(!bufferIsFull) {
+        return -1;
+    }
     const size_t WINDOW_LOOK_SIZE = 15; // NOTE THIS MEANS TO LOOK THAT MANY LEFT AND THAT MANY RIGHT
     //IE. 3 means total window size of 7, the value, 3 to the left, and 3 to the right
     
