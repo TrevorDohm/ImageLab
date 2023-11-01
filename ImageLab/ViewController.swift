@@ -20,6 +20,10 @@ class ViewController: UIViewController   {
     let bridge = OpenCVBridge()
     var isFlashManuallyControlled:Bool = false
 
+    @IBOutlet weak var graphView: UIView!
+    lazy var graph:MetalGraph? = {
+        return MetalGraph(userView: self.graphView)
+    }()
     
     // MARK: View Outlets
     @IBOutlet weak var flashSlider: UISlider!
@@ -37,7 +41,10 @@ class ViewController: UIViewController   {
         super.viewDidLoad()
         
         self.view.backgroundColor = nil
-        
+        graph?.addGraph(withName: "bpm",
+            shouldNormalizeForFFT: true,
+                        numPointsInGraph: Int(self.bridge.getBufferSize()))
+
         // setup the OpenCV bridge nose detector, from file
         self.bridge.loadHaarCascade(withFilename: "nose")
         
@@ -61,10 +68,36 @@ class ViewController: UIViewController   {
         if !videoManager.isRunning{
             videoManager.start()
         }
+        Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { _ in
+            self.updateGraphView()
+        }
         
 //        startUpdatingBPM()
     
     }
+    func logC(val: Double, forBase base: Double) -> Double {
+        return log(val)/log(base)
+    }
+    
+    @objc func updateGraphView() {
+        var theArray:[Float] = []
+        for i in 0...Int(self.bridge.getBufferSize()){
+//            theArray.append(Float(logC(val:self.bridge.avgPixelIntensityRed[i], forBase:200.0)))
+//            if self.bridge.avgPixelIntensityRed[i] > 200.0{
+            theArray.append(Float(self.bridge.ppg[i]))
+//            } else {
+//                theArray.append(0)
+//            }
+            
+        }
+        
+        
+        self.graph?.updateGraph(
+            data: theArray,
+            forKey: "bpm"
+        )
+    }
+        
     @objc func bpmUpdater() {
         self.currBpm = self.bridge.getBetsPerMinute()
     }

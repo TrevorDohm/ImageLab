@@ -161,7 +161,7 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <mtkView contentMode="scaleToFill" colorPixelFormat="BGRA8Unorm" depthStencilPixelFormat="Depth32Float" translatesAutoresizingMaskIntoConstraints="NO" id="Xqm-zI-mYg">
-                                <rect key="frame" x="0.0" y="94" width="375" height="581"/>
+                                <rect key="frame" x="0.0" y="317" width="375" height="358"/>
                                 <gestureRecognizers/>
                                 <connections>
                                     <outletCollection property="gestureRecognizers" destination="bhc-zi-pqW" appends="YES" id="Ntg-q1-A2g"/>
@@ -169,12 +169,20 @@
                                 </connections>
                             </mtkView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="bpmLabel" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="r1g-DT-mZS">
-                                <rect key="frame" x="16" y="345" width="343" height="21"/>
+                                <rect key="frame" x="16" y="486" width="343" height="21"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SCe-Dw-Al3" userLabel="graphView">
+                                <rect key="frame" x="16" y="102" width="343" height="207"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="207" id="cEG-t7-NFl"/>
+                                    <constraint firstAttribute="width" constant="343" id="l7V-vP-adi"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <gestureRecognizers/>
@@ -182,16 +190,19 @@
                             <constraint firstAttribute="bottom" secondItem="AZh-I9-zyC" secondAttribute="bottom" constant="20" symbolic="YES" id="60r-75-K1I"/>
                             <constraint firstItem="fsl-XI-9ND" firstAttribute="leading" secondItem="AZh-I9-zyC" secondAttribute="leading" id="8Qr-hq-s8c"/>
                             <constraint firstItem="fsl-XI-9ND" firstAttribute="baseline" secondItem="HqB-mz-Xht" secondAttribute="baseline" id="9LW-dS-HXP"/>
-                            <constraint firstItem="Xqm-zI-mYg" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" id="Evu-PC-5UW"/>
+                            <constraint firstItem="Xqm-zI-mYg" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" constant="223" id="Evu-PC-5UW"/>
                             <constraint firstItem="AZh-I9-zyC" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leadingMargin" id="JNk-l6-pcn"/>
                             <constraint firstItem="17Z-Pc-DCH" firstAttribute="centerX" secondItem="AZh-I9-zyC" secondAttribute="centerX" id="L2W-SG-Ph3"/>
                             <constraint firstItem="HqB-mz-Xht" firstAttribute="trailing" secondItem="AZh-I9-zyC" secondAttribute="trailing" id="NMX-0P-Ett"/>
+                            <constraint firstItem="SCe-Dw-Al3" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leadingMargin" id="Nr1-Xx-LsC"/>
                             <constraint firstAttribute="trailing" secondItem="Xqm-zI-mYg" secondAttribute="trailing" id="Y7z-Yu-sSb"/>
                             <constraint firstItem="AZh-I9-zyC" firstAttribute="top" secondItem="HqB-mz-Xht" secondAttribute="bottom" constant="8" symbolic="YES" id="csO-hb-YdJ"/>
                             <constraint firstItem="HqB-mz-Xht" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="8bC-Xf-vdC" secondAttribute="leading" constant="20" symbolic="YES" id="dG4-O1-6UF"/>
                             <constraint firstItem="AZh-I9-zyC" firstAttribute="trailing" secondItem="8bC-Xf-vdC" secondAttribute="trailingMargin" id="eNH-ox-Zlt"/>
                             <constraint firstItem="Xqm-zI-mYg" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="k10-yX-r11"/>
+                            <constraint firstItem="SCe-Dw-Al3" firstAttribute="trailing" secondItem="8bC-Xf-vdC" secondAttribute="trailingMargin" id="nAZ-gc-ZeE"/>
                             <constraint firstItem="17Z-Pc-DCH" firstAttribute="top" secondItem="Xqm-zI-mYg" secondAttribute="bottom" constant="20" id="nvL-hq-au7"/>
+                            <constraint firstItem="SCe-Dw-Al3" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" constant="8" symbolic="YES" id="oVX-2J-MIf"/>
                             <constraint firstItem="AZh-I9-zyC" firstAttribute="top" secondItem="17Z-Pc-DCH" secondAttribute="bottom" constant="46" id="pbd-8x-fny"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="fsl-XI-9ND" secondAttribute="trailing" constant="20" symbolic="YES" id="tu9-Sb-MW5"/>
                         </constraints>
@@ -202,6 +213,7 @@
                         <outlet property="cameraToggleButton" destination="HqB-mz-Xht" id="0IH-y9-CRO"/>
                         <outlet property="cameraView" destination="Xqm-zI-mYg" id="SUk-4i-PQC"/>
                         <outlet property="flashSlider" destination="AZh-I9-zyC" id="cd6-Eh-9cl"/>
+                        <outlet property="graphView" destination="SCe-Dw-Al3" id="6fd-rU-leO"/>
                         <outlet property="stageLabel" destination="17Z-Pc-DCH" id="8wP-8W-1JO"/>
                         <outlet property="torchToggleButton" destination="fsl-XI-9ND" id="fhH-nI-Gmn"/>
                     </connections>

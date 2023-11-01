@@ -18,7 +18,7 @@ using namespace cv;
 @property (nonatomic) CGAffineTransform transform;
 @property (nonatomic) CGAffineTransform inverseTransform;
 @property (atomic) cv::CascadeClassifier classifier;
-@property (atomic) double *avgPixelIntensityRed;
+
 @end
 
 @implementation OpenCVBridge
@@ -117,6 +117,11 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
 }
 
 
+-(int) getBufferSize {
+    return bufferSize;
+}
+
+
 
 -(int) getBetsPerMinute {
     if(!bufferIsFull) {
@@ -143,9 +148,12 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
         }
         if(_max == buf[i]) {// if the max is in the middle of window then we found a peak
             peakDistSum += i - prevPeak;
+            self.ppg[i] = buf[i];
             prevPeak = i;
             numPeaks += 1;
             //TODO Maybe take the average peak dist and use that instead of num peaks
+        } else {
+            self.ppg[i] = log2(buf[i]);
         }
     }
     int bpm = int(numPeaks * 60 /secondsToFillBuffer);
@@ -458,13 +466,14 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
         //self.inverseTransform = CGAffineTransformRotate(self.inverseTransform, -M_PI_2);
         self.transform = CGAffineTransformIdentity;
         self.inverseTransform = CGAffineTransformIdentity;
-        
+        self.ppg = new double[bufferSize];
     }
     return self;
 }
 
 -(void)dealloc{
     delete[] self.avgPixelIntensityRed; //No memory Leaks
+    delete[] self.ppg;
 }
 #pragma mark Bridging OpenCV/CI Functions
 // code manipulated from

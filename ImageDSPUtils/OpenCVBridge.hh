@@ -11,17 +11,18 @@
 #import "AVFoundation/AVFoundation.h"
 
 #import "PrefixHeader.pch"
-
 @interface OpenCVBridge : NSObject
 
 @property (nonatomic) NSInteger processType;
-
-
+@property (atomic) double *avgPixelIntensityRed;
+@property (atomic) double *ppg;
 // set the image for processing later
 -(void) setImage:(CIImage*)ciFrameImage
       withBounds:(CGRect)rect
       andContext:(CIContext*)context;
 
+-(int) getBufferSize;
+//-(NSMutableArray) getColorBuffer;
 //get the image raw opencv
 -(CIImage*)getImage;
 

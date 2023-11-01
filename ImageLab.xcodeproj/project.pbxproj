@@ -17,6 +17,8 @@
 		B67B72BB1D996ADE008EDDE1 /* OpenCVBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = B67B72BA1D996ADE008EDDE1 /* OpenCVBridge.mm */; };
 		B67B72BF1D99D0AD008EDDE1 /* nose.xml in Resources */ = {isa = PBXBuildFile; fileRef = B67B72BE1D99D0AD008EDDE1 /* nose.xml */; };
 		B6885D9A2ADD73A100C11AFF /* VisionAnalgesic.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6885D992ADD73A100C11AFF /* VisionAnalgesic.swift */; };
+		BCC9673B2AF209FC00CB66A4 /* MetalGraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCC9673A2AF209FC00CB66A4 /* MetalGraph.swift */; };
+		BCC9673D2AF20F1700CB66A4 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = BCC9673C2AF20F1700CB66A4 /* Shaders.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +37,8 @@
 		B67B72BE1D99D0AD008EDDE1 /* nose.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = nose.xml; sourceTree = SOURCE_ROOT; };
 		B6885D992ADD73A100C11AFF /* VisionAnalgesic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VisionAnalgesic.swift; sourceTree = "<group>"; };
 		B6EF2FD91F7A906A00C33387 /* PrefixHeader.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PrefixHeader.pch; sourceTree = "<group>"; };
+		BCC9673A2AF209FC00CB66A4 /* MetalGraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalGraph.swift; sourceTree = "<group>"; };
+		BCC9673C2AF20F1700CB66A4 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,6 +56,8 @@
 		B650B30E1D8340F0000114A1 = {
 			isa = PBXGroup;
 			children = (
+				BCC9673C2AF20F1700CB66A4 /* Shaders.metal */,
+				BCC9673A2AF209FC00CB66A4 /* MetalGraph.swift */,
 				B67B72B61D996AB2008EDDE1 /* opencv2.framework */,
 				B650B34A1D83435A000114A1 /* ImageDSPUtils */,
 				B650B3191D8340F0000114A1 /* ImageLab */,
@@ -171,10 +177,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BCC9673D2AF20F1700CB66A4 /* Shaders.metal in Sources */,
 				B650B31D1D8340F0000114A1 /* ViewController.swift in Sources */,
 				B650B31B1D8340F0000114A1 /* AppDelegate.swift in Sources */,
 				B67B72BB1D996ADE008EDDE1 /* OpenCVBridge.mm in Sources */,
 				B6885D9A2ADD73A100C11AFF /* VisionAnalgesic.swift in Sources */,
+				BCC9673B2AF209FC00CB66A4 /* MetalGraph.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
