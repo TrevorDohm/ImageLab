@@ -11,13 +11,8 @@ extension CIFaceFeature {
 }
 
 // Add Methods To Protocol
-protocol VideoModelDelegate: AnyObject {
-    func didDetectBlink(blinkCount: Int)
-    func didProcessImage(_ processedImage: CIImage)
-}
 
 class VideoModel: NSObject {
-    weak var delegate:VideoModelDelegate?
     weak var cameraView:MTKView?
     
     // MARK: Class Properties
