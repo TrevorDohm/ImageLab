@@ -9,6 +9,7 @@
 import UIKit
 import AVFoundation
 import MetalKit
+import Accelerate
 
 class ViewController: UIViewController   {
 
@@ -42,7 +43,7 @@ class ViewController: UIViewController   {
         
         self.view.backgroundColor = nil
         graph?.addGraph(withName: "bpm",
-            shouldNormalizeForFFT: true,
+            shouldNormalizeForFFT: false,
                         numPointsInGraph: Int(self.bridge.getBufferSize()))
 
         // setup the OpenCV bridge nose detector, from file
@@ -68,7 +69,7 @@ class ViewController: UIViewController   {
         if !videoManager.isRunning{
             videoManager.start()
         }
-        Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { _ in
+        Timer.scheduledTimer(withTimeInterval: 1/30.0, repeats: true) { _ in
             self.updateGraphView()
         }
         
@@ -92,17 +93,13 @@ class ViewController: UIViewController   {
     }
     
     @objc func updateGraphView() {
+//        var theArray:[Float] = Array.init(repeating: 0.0, count: Int(self.bridge.getBufferSize()))
         var theArray:[Float] = []
         for i in 0...Int(self.bridge.getBufferSize()){
-//            theArray.append(Float(logC(val:self.bridge.avgPixelIntensityRed[i], forBase:200.0)))
-//            if self.bridge.avgPixelIntensityRed[i] > 200.0{
             theArray.append(Float(self.bridge.ppg[i]))
-//            } else {
-//                theArray.append(0)
-//            }
-            
         }
-        
+//        memcpy(&theArray, self.bridge.ppg, Int(self.bridge.getBufferSize() * 4))
+//        vDSP_vdpsp(self.bridge.ppg, 1, &theArray, 1, vDSP_Length(Int(self.bridge.getBufferSize())))
         
         self.graph?.updateGraph(
             data: theArray,
@@ -113,72 +110,8 @@ class ViewController: UIViewController   {
     @objc func bpmUpdater() {
         self.currBpm = self.bridge.getBetsPerMinute()
     }
-    // MARK: Process Image Output
-//    func processFace(inputImage:CIImage) -> CIImage{
-//         //detect faces
-//        let f = getFaces(img: inputImage)
-//
-//         //if no faces, just return original image
-//        if f.count == 0 { return inputImage }
-//
-//        var retImage = inputImage
-//
-//        self.bridge.setImage(retImage,
-//                             withBounds: f[0].bounds, // the first face bounds
-//                             andContext: self.videoManager.getCIContext())
-//
-//        self.bridge.processImage()
-//        retImage = self.bridge.getImageComposite() // get back opencv processed part of the image (overlayed on original)
-//
-//        return retImage
-//    }
-    
-    // This shows
-    ///Removed because I dont think a timer is correct. Should be in the VideoProcessor no?
-//    func startUpdatingBPM() {
-//        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
-//            let bpm = self.bridge.getBetsPerMinute() //calculates bpm in bridge
-//            self.bpmLabel.text = "BPM: \(bpm)"
-//        }
-//    }
-
     
     func processImageSwift(inputImage:CIImage) -> CIImage{
-        
-        // detect faces
-//        let f = getFaces(img: inputImage)
-        
-        // if no faces, just return original image
-//        if f.count == 0 { return inputImage }
-        
-//        var retImage = inputImage
-        
-        //-------------------Example 1----------------------------------
-        // if you just want to process on separate queue use this code
-        // this is a NON BLOCKING CALL, but any changes to the image in OpenCV cannot be displayed real time
-        /*
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0)) { () -> Void in
-            self.bridge.setImage(retImage, withBounds: retImage.extent, andContext: self.videoManager.getCIContext())
-            self.bridge.processImage()
-        }
-         */
-        
-        //-------------------Example 2----------------------------------
-        // use this code if you are using OpenCV and want to overwrite the displayed image via OpenCV
-        // this is a BLOCKING CALL
-        /*
-        // FOR FLIPPED ASSIGNMENT, YOU MAY BE INTERESTED IN THIS EXAMPLE
-        
-        self.bridge.setImage(retImage, withBounds: retImage.extent, andContext: self.videoManager.getCIContext())
-        self.bridge.processImage()
-        retImage = self.bridge.getImage()
-         */
-        
-        //-------------------Example 3----------------------------------
-        //You can also send in the bounds of the face to ONLY process the face in OpenCV
-        // or any bounds to only process a certain bounding region in OpenCV
-        
-        // Initializer
         var retImage = inputImage
         
         // Set Current Image
@@ -191,10 +124,10 @@ class ViewController: UIViewController   {
         
         
         // Based On Return Value, Enable / Disable Buttons
-//        DispatchQueue.main.async {
+        
             self.torchToggleButton.isEnabled = !isFingerDetected
             self.cameraToggleButton.isEnabled = !isFingerDetected
-            if currBpm != -1 {
+            if self.currBpm != -1 {
                 self.bpmLabel.text = "BPM: \(self.currBpm)"
                 
             } else {
@@ -204,10 +137,11 @@ class ViewController: UIViewController   {
                 } else {
                     //TODO make a loading bar
                     self.bpmLabel.text = "Hold finger..."
+                    self.stageLabel.text = "Finger is present"
                 }
                 
             }
-//        }
+        
 
         // Toggle Flash Depending On Return
         // Note: Only Change If Not Already Controlled

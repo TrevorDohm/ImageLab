@@ -14,8 +14,9 @@
 @interface OpenCVBridge : NSObject
 
 @property (nonatomic) NSInteger processType;
-@property (atomic) double *avgPixelIntensityRed;
-@property (atomic) double *ppg;
+@property (nonatomic) double *avgPixelIntensityRed;
+//@property (nonatomic) vector<double> avgPixelIntensityRed;
+@property (nonatomic) double *ppg;
 // set the image for processing later
 -(void) setImage:(CIImage*)ciFrameImage
       withBounds:(CGRect)rect
@@ -25,7 +26,7 @@
 //-(NSMutableArray) getColorBuffer;
 //get the image raw opencv
 -(CIImage*)getImage;
-
+-(void)resetFrameDelay;
 //get the image inside the original bounds
 -(CIImage*)getImageComposite;
 

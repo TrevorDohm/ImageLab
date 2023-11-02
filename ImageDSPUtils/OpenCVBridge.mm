@@ -18,7 +18,7 @@ using namespace cv;
 @property (nonatomic) CGAffineTransform transform;
 @property (nonatomic) CGAffineTransform inverseTransform;
 @property (atomic) cv::CascadeClassifier classifier;
-
+@property (atomic) int frameDelay;
 @end
 
 @implementation OpenCVBridge
@@ -87,14 +87,16 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     if (flashCooldownCounter > 0) {
         flashCooldownCounter--;
     }
-    
+    if (self.frameDelay > 0) {
+        self.frameDelay --;
+    }
     // Execute Only When Finger Over Camera
-    if (flash) {
+    if (flash && self.frameDelay <= 0) {
         // Save Average Blue, Green, Red Values
         avgPixelIntensityBlue[currentIndex] = avgPixelIntensity.val[0];
         avgPixelIntensityGreen[currentIndex] = avgPixelIntensity.val[1];
         self.avgPixelIntensityRed[currentIndex] = avgPixelIntensity.val[2];
-        
+        self.ppg[currentIndex] = (avgPixelIntensity.val[2] / 128) - 1;
         // Increment Index
         currentIndex++;
         if (currentIndex >= bufferSize) { //make sure we dont go out of bounds, will handle circular later
@@ -148,65 +150,13 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
         }
         if(_max == buf[i]) {// if the max is in the middle of window then we found a peak
             peakDistSum += i - prevPeak;
-            self.ppg[i] = buf[i]/15;
             prevPeak = i;
             numPeaks += 1;
             //TODO Maybe take the average peak dist and use that instead of num peaks
-        } else {
-            self.ppg[i] = buf[i]/30;
         }
     }
     int bpm = int(numPeaks * 60 /secondsToFillBuffer);
-    int bpm2 = int(numPeaks * (fps/float(secondsToFillBuffer) ));
-    int bpm3 = int( ((float( peakDistSum) / float(numPeaks))/ fps));
     return bpm;
-    return 10;
-//    const int WINDOW_SIZE = 20; // 20 seconds
-//    const int SAMPLING_RATE = 60; // 60 samples per second
-//    const int BEAT_WINDOW = 5; // A small window to average out values for beat detection
-//
-//    // Corrected Color Conversion
-//    cv::Mat image_copy;
-//    Scalar avgPixelIntensity;
-//    cvtColor(_image, image_copy, CV_RGBA2BGR);
-//    avgPixelIntensity = cv::mean( image_copy );
-//
-//    double redValue = avgPixelIntensity.val[2];
-//    double blueValue = avgPixelIntensity.val[0];
-//
-//    static std::vector<double> pastRedValues; // History of past red values
-//    static std::vector<double> pastBlueValues; // History of past blue values
-//
-//    // Save the current red and blue values
-//    pastRedValues.push_back(redValue);
-//    pastBlueValues.push_back(blueValue);
-//
-//    // If we've stored more than WINDOW_SIZE * SAMPLING_RATE values, remove the oldest one
-//    if(pastRedValues.size() > WINDOW_SIZE * SAMPLING_RATE) {
-//        pastRedValues.erase(pastRedValues.begin());
-//        pastBlueValues.erase(pastBlueValues.begin());
-//    }
-//
-//    int beatCount = 0;
-//
-//    for(int i = BEAT_WINDOW; i < pastRedValues.size(); i++) {
-//        double sumRed = 0.0;
-//        double sumBlue = 0.0;
-//        for(int j = i - BEAT_WINDOW; j < i; j++) {
-//            sumRed += pastRedValues[j];
-//            sumBlue += pastBlueValues[j];
-//        }
-//        double avgRecentRed = sumRed / BEAT_WINDOW;
-//        double avgRecentBlue = sumBlue / BEAT_WINDOW;
-//        if(pastRedValues[i] > 1.1 * avgRecentRed && pastBlueValues[i] < 0.9 * avgRecentBlue) {
-//            beatCount++;
-//        }
-//    }
-//
-//    // Convert beat count over 20 seconds to beats per minute
-//    int bpm = beatCount * (60 / WINDOW_SIZE);
-//
-//    return bpm;
 }
 
 
@@ -464,6 +414,10 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     self.classifier = cv::CascadeClassifier([filePath UTF8String]);
 }
 
+-(void)resetFrameDelay {
+    self.frameDelay = fps * 10;
+}
+
 -(instancetype)init{
     self = [super init];
     
@@ -476,6 +430,7 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
         self.transform = CGAffineTransformIdentity;
         self.inverseTransform = CGAffineTransformIdentity;
         self.ppg = new double[bufferSize];
+        self.frameDelay = fps * 10;
     }
     return self;
 }
