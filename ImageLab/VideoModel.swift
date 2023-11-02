@@ -10,7 +10,11 @@ extension CIFaceFeature{
 protocol VideoModelDelegate: AnyObject{
     func didDetectBlink(blinkCount: Int)
     func didProcessImage(_ processedImage: CIImage)
+    func updateBlinkLabel()
 }
+
+
+
 
 class VideoModel: NSObject {
     weak var delegate: VideoModelDelegate?
@@ -137,6 +141,7 @@ class VideoModel: NSObject {
             
             if let face = features.first {
                 let faceAngle = face.faceAngle
+                print(faceAngle)
 //                if abs(faceAngle) < Float(Double.pi) / 4 {
 //                            // Face is approximately straight (not rotated much)
 //                            if faceAngle > 0 {
@@ -156,7 +161,8 @@ class VideoModel: NSObject {
 //                                // Face is looking down
 //                            }
 //                        }
-                print(faceAngle)
+                //print(faceAngle)
+
                 //                    let rollAngle = face.rollAngle
                 //                    let pitchAngle = face.pitchAngle
                 //                    let yawAngle = face.yawAngle
@@ -178,11 +184,10 @@ class VideoModel: NSObject {
             if eyeStateHistory.count > 3 && eyeStateHistory[eyeStateHistory.count-2] == true && eyeStateHistory.last == false{
                 print("You just blinked")
                 blinkCount += 1
-                // Notify the ModAViewController about the blink
-                delegate?.didDetectBlink(blinkCount: blinkCount)
-
+                //blinkLabel.text = "\(blinkCount)"
             }
         }
+        delegate?.didDetectBlink(blinkCount: blinkCount)
         return retImage
     }
     
@@ -198,8 +203,11 @@ class VideoModel: NSObject {
 //    //MARK: Process image output
     private func processImage(inputImage:CIImage) -> CIImage{
 
+        
         // detect faces
         let faces = getFaces(img: inputImage)
+
+        delegate?.didDetectBlink(blinkCount: blinkCount)
 
         // if no faces, just return original image
         if faces.count == 0 { return inputImage }
@@ -240,5 +248,6 @@ class VideoModel: NSObject {
         if videoManager.isRunning {
             videoManager.stop()
         }
+        
     }
 }

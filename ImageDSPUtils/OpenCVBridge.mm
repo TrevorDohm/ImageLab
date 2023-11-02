@@ -444,6 +444,15 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
 }
 
 
+-(void)resetBuffer{
+    for(int i = 0; i< bufferSize; i++){
+        avgPixelIntensityBlue[i] = 0;
+        self.avgPixelIntensityRed[i] = 0;
+        avgPixelIntensityGreen[i] = 0;
+    }
+    currentIndex = 0;
+}
+
 #pragma mark ====Do Not Manipulate Code below this line!====
 -(void)setTransforms:(CGAffineTransform)trans{
     self.inverseTransform = trans;

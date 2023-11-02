@@ -27,7 +27,7 @@ class ModuleAViewController: UIViewController, VideoModelDelegate {
 //            userInfo: nil, repeats: true)
     }
     
-    @objc func updateBlinkLabel(){
+    func updateBlinkLabel(){
         let numBlinks = max(videoModel!.blinkCount, 0)
         blinkLabel.text = "You have blinked: \(numBlinks)"
     }

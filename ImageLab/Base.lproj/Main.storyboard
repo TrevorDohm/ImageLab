@@ -106,7 +106,7 @@
                     </view>
                     <navigationItem key="navigationItem" id="5mQ-7e-fYz"/>
                     <connections>
-                        <outlet property="blinkLabel" destination="12p-xL-Hwu" id="5ZU-YK-89W"/>
+                        <outlet property="blinkLabel" destination="12p-xL-Hwu" id="gke-CB-o5o"/>
                         <outlet property="cameraView" destination="w7q-KN-wpr" id="svo-0m-h5M"/>
                     </connections>
                 </viewController>

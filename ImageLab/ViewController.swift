@@ -75,6 +75,18 @@ class ViewController: UIViewController   {
 //        startUpdatingBPM()
     
     }
+    func cleanup(){
+        if videoManager.isRunning {
+            videoManager.stop()
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        self.cleanup()
+        self.bridge.resetBuffer()
+    }
+    
     func logC(val: Double, forBase base: Double) -> Double {
         return log(val)/log(base)
     }

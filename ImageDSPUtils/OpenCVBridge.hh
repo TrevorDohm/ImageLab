@@ -42,6 +42,9 @@
 // for the video manager transformations
 -(void)setTransforms:(CGAffineTransform)trans;
 
+// sets buffer to 0 if you leave the view
+-(void) resetBuffer;
+
 -(void)loadHaarCascadeWithFilename:(NSString*)filename;
 
 // Process Finger Header Declaration
