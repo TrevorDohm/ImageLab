@@ -53,8 +53,8 @@ class VideoModel: NSObject {
     private var faceLandmarkRequest: VNDetectFaceLandmarksRequest!
     private var eyeStateHistory = [Bool]()
     private var blinkCooldownFrames = 0
+    var direction = "Looking Straight"
     var blinkCount = 0
-    var direction = ""
     
     // Initialize Metal View
     init(view:MTKView){
@@ -93,20 +93,20 @@ class VideoModel: NSObject {
     func interpretHeadPosition(yaw: CGFloat, roll: CGFloat) {
         
         // Reset Direction
-        direction = ""
+        direction = "Looking Straight"
         
         // Interpret Yaw
         if yaw > 0.5 {
-            direction += "Looking Left "
+            direction = "Looking Left"
         } else if yaw < -0.5 {
-            direction += "Looking Right "
+            direction = "Looking Right"
         }
         
         // Interpret Roll
         if roll > 0.5 {
-            direction += "Head Tilted Right"
+            direction = "Head Tilted Right"
         } else if roll < -0.5 {
-            direction += "Head Tilted Left"
+            direction = "Head Tilted Left"
         }
         
     }
@@ -192,7 +192,7 @@ class VideoModel: NSObject {
                 // Also Note: GPT Helped Me Somewhat Here! Don't Take Off Points Please!
                 let font = UIFont.systemFont(ofSize: 20)
                 let attributes = [NSAttributedString.Key.font: font, NSAttributedString.Key.foregroundColor: UIColor.white]
-                let attributedText = NSAttributedString(string: direction, attributes: attributes)
+                let attributedText = NSAttributedString(string: "Blinks: " + String(blinkCount) + "; " + direction, attributes: attributes)
                 let textSize = attributedText.size()
                 let scale = UIScreen.main.scale
                 UIGraphicsBeginImageContextWithOptions(textSize, false, scale)
@@ -210,7 +210,7 @@ class VideoModel: NSObject {
                 blendFilter.setValue(retImage, forKey: kCIInputBackgroundImageKey)
 
                 // Position Text As Needed On Image
-                let transform = CGAffineTransform(translationX: (retImage.extent.width - textSize.width) / 16, y: retImage.extent.height - textSize.height - 80)
+                let transform = CGAffineTransform(translationX: (retImage.extent.width - textSize.width) / 16, y: retImage.extent.height - textSize.height - 100)
                 let transformedTextCIImage = textCIImage.transformed(by: transform)
                 blendFilter.setValue(transformedTextCIImage, forKey: kCIInputImageKey)
                 retImage = blendFilter.outputImage!
@@ -256,15 +256,12 @@ class VideoModel: NSObject {
                 // Count No. Frames Where Eyes Were Closed
                 let closedEyesCount = eyeStateHistory.filter { $0 == true }.count
                 
-                // If Eyes Closed For 3 - 7 Frames, Blink Counted
-                if closedEyesCount >= 3 && closedEyesCount <= 7 {
+                // If Eyes Closed For 2 - 6 Frames, Blink Counted
+                if closedEyesCount >= 2 && closedEyesCount <= 6 {
                     
                     // Blink Detected
                     blinkCount += 1
-                    
-                    // Blinking Delegate
-                    delegate?.didDetectBlink(blinkCount: blinkCount)
-                    
+                                        
                     // Set Cooldown Frames To Prevent Another Blink From Being Detected Immediately
                     blinkCooldownFrames = 10
                     
@@ -280,7 +277,8 @@ class VideoModel: NSObject {
     }
     
     private func getFaces(img:CIImage) -> [CIFaceFeature]{
-        // makes sure the image is the correct orientation
+        
+        // Make Sure Image Is Correct Orientation
         let optsFace = [CIDetectorImageOrientation:self.videoManager.ciOrientation,
                                    CIDetectorSmile: true,
                                 CIDetectorEyeBlink: true] as [String : Any] as [String : Any]
@@ -288,52 +286,28 @@ class VideoModel: NSObject {
         return self.detector.features(in: img, options: optsFace) as! [CIFaceFeature]
     }
     
-//    //MARK: Process image output
+    // MARK: Process Image Output
     private func processImage(inputImage:CIImage) -> CIImage{
         
+        // Handler For Apple Vision Request
         let handler = VNImageRequestHandler(ciImage: inputImage, options: [:])
         do {
             try handler.perform([self.faceLandmarkRequest])
         } catch {
-            print("Failed to perform landmark detection:", error)
+            print("Failed To Perform Landmark Detection:", error)
         }
         
-        // detect faces
+        // Detect Faces
         let faces = getFaces(img: inputImage)
 
-        // if no faces, just return original image
+        // If No Faces, Just Return Original Image
         if faces.count == 0 { return inputImage }
 
-        //otherwise apply the filters to the faces
+        // Otherwise Apply Filter To Faces
         return applyFiltersToFaces(inputImage: inputImage, features: faces)
 
     }
-//    
-//    private func processImage(inputImage: CIImage) -> CIImage {
-//        // Perform the face detection and image processing in the background
-//        DispatchQueue.global(qos: .userInitiated).async {
-//            // Detect faces
-//            let faces = self.getFaces(img: inputImage)
-//
-//            // If no faces, just return the original image
-//            if faces.count == 0 {
-//                // Notify the delegate that the image processing is complete (no changes)
-//                self.delegate?.didProcessImage(inputImage)
-//                return
-//            }
-//
-//            // Apply the filters to the faces
-//            let filteredImage = self.applyFiltersToFaces(inputImage: inputImage, features: faces)
-//
-//            // Notify the delegate with the processed image
-//            //self.delegate?.didProcessImage(filteredImage)
-//        }
-//
-//        // Return the original image immediately
-//        return inputImage
-//    }
 
-    
     func cleanup() {
         
         // Clean Up Any Camera / Metal Resources Here
