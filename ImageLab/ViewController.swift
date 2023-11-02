@@ -53,16 +53,7 @@ class ViewController: UIViewController   {
         self.videoManager.setCameraPosition(position: AVCaptureDevice.Position.back)
         self.videoManager.setFPS(desiredFrameRate: 30)
         // create dictionary for face detection
-        // HINT: you need to manipulate these properties for better face detection efficiency
-        let optsDetector = [CIDetectorAccuracy:CIDetectorAccuracyHigh,
-                      CIDetectorNumberOfAngles:11,
-                      CIDetectorTracking:false] as [String : Any]
-        
-        // setup a face detector in swift
-        self.detector = CIDetector(ofType: CIDetectorTypeFace,
-                                  context: self.videoManager.getCIContext(), // perform on the GPU is possible
-            options: (optsDetector as [String : AnyObject]))
-        
+    
         self.videoManager.setProcessingBlock(newProcessBlock: self.processImageSwift)
         
         bpmTimer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.bpmUpdater), userInfo: nil, repeats: true)
@@ -76,6 +67,18 @@ class ViewController: UIViewController   {
 //        startUpdatingBPM()
     
     }
+    func cleanup(){
+         if videoManager.isRunning {
+             videoManager.stop()
+         }
+     }
+
+     override func viewWillDisappear(_ animated: Bool) {
+         super.viewWillDisappear(animated)
+         self.cleanup()
+         self.bridge.resetBuffer()
+     }
+    
     func logC(val: Double, forBase base: Double) -> Double {
         return log(val)/log(base)
     }
