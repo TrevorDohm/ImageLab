@@ -127,7 +127,7 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     if(!bufferIsFull) {
         return -1;
     }
-    const size_t WINDOW_LOOK_SIZE = 13; // NOTE THIS MEANS TO LOOK THAT MANY LEFT AND THAT MANY RIGHT
+    const size_t WINDOW_LOOK_SIZE = 15; // NOTE THIS MEANS TO LOOK THAT MANY LEFT AND THAT MANY RIGHT
     //IE. 3 means total window size of 7, the value, 3 to the left, and 3 to the right
     
     vector<double> buf(bufferSize);
