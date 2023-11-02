@@ -38,6 +38,7 @@ class ViewController: UIViewController   {
     var currBpm:Int32 = -1
     
     // MARK: ViewController Hierarchy
+    //set up videoManager
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -47,8 +48,6 @@ class ViewController: UIViewController   {
                         numPointsInGraph: Int(self.bridge.getBufferSize()))
 
         // setup the OpenCV bridge nose detector, from file
-        self.bridge.loadHaarCascade(withFilename: "nose")
-        
         self.videoManager = VisionAnalgesic(view: self.cameraView)
         self.videoManager.setCameraPosition(position: AVCaptureDevice.Position.back)
         
@@ -148,37 +147,7 @@ class ViewController: UIViewController   {
         return retImage
         
     }
-    
-    // MARK: Setup Face Detection
-    
-    func getFaces(img:CIImage) -> [CIFaceFeature]{
-        // this ungodly mess makes sure the image is the correct orientation
-        let optsFace = [CIDetectorImageOrientation:self.videoManager.ciOrientation]
-        // get Face Features
-        return self.detector.features(in: img, options: optsFace) as! [CIFaceFeature]
         
-    }
-    
-    // change the type of processing done in OpenCV
-    @IBAction func swipeRecognized(_ sender: UISwipeGestureRecognizer) {
-        switch sender.direction {
-        case .left:
-            if self.bridge.processType <= 10 {
-                self.bridge.processType += 1
-            }
-        case .right:
-            if self.bridge.processType >= 1{
-                self.bridge.processType -= 1
-            }
-        default:
-            break
-            
-        }
-        
-        stageLabel.text = "Stage: \(self.bridge.processType)"
-
-    }
-    
     // MARK: Convenience Methods For UI Flash, Camera Toggle
     @IBAction func flash(_ sender: AnyObject) {
         

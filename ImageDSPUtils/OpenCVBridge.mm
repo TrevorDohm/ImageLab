@@ -30,7 +30,6 @@ const uint secondsToFillBuffer = 30;
 const uint bufferSize = fps * secondsToFillBuffer;
 bool bufferIsFull = false;
 
-//double avgPixelIntensityRed[bufferSize];
 float avgPixelIntensityGreen[bufferSize];
 float avgPixelIntensityBlue[bufferSize];
 
@@ -38,28 +37,14 @@ size_t currentIndex = 0;
 bool flash = false;
 int flashCooldownCounter = 60; // 2 Seconds (30 FPS Default)
 
-// Text Information
-char text[100];
-double fontScale = 3.5;
-int thickness = 2;
-int baseline = 0;
-cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickness, &baseline);
-//double redAvgs[60 * 30];
 #pragma mark === Write Your Code Here ===
 -(bool)processFinger{
-    std::cout << "CurrIndex: " <<currentIndex <<std::endl;
+    //std::cout << "CurrIndex: " <<currentIndex <<std::endl;
     // Corrected Color Conversion
     cv::Mat image_copy;
     Scalar avgPixelIntensity;
     cvtColor(_image, image_copy, CV_RGBA2BGR);
     avgPixelIntensity = cv::mean( image_copy );
-    
-    
-    // Calculate Starting Position (BL Corner) For Centering
-    cv::Point textOrg((image_copy.cols - textSize.width) / 16, (image_copy.rows + textSize.height) / 16);
-    
-    // Overlay Text Onto Image
-    cv::putText(_image, text, textOrg, FONT_HERSHEY_PLAIN, fontScale, Scalar::all(255), thickness, 2);
     
     // Cooldown Counter Check
     if (flashCooldownCounter == 0) {
@@ -90,13 +75,12 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     if (self.frameDelay > 0) {
         self.frameDelay --;
     }
-    // Execute Only When Finger Over Camera
+    // Execute Only When Finger Over Camera, this is also to wait a few seconds before filling buffer when finger on camer
     if (flash && self.frameDelay <= 0) {
         // Save Average Blue, Green, Red Values
         avgPixelIntensityBlue[currentIndex] = avgPixelIntensity.val[0];
         avgPixelIntensityGreen[currentIndex] = avgPixelIntensity.val[1];
         self.avgPixelIntensityRed[currentIndex] = avgPixelIntensity.val[2];
-        //self.ppg[currentIndex] = (avgPixelIntensity.val[2] / 128) - 1;
         // Increment Index
         currentIndex++;
         if (currentIndex >= bufferSize) { //make sure we dont go out of bounds, will handle circular later
@@ -104,14 +88,11 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
             bufferIsFull = true;
             
         }
-        
     }
-    
     // Return Flash
     return flash;
     
 }
-
 
 -(bool) isBPMReady {
     return bufferIsFull;
@@ -130,13 +111,15 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     const size_t WINDOW_LOOK_SIZE = 15; // NOTE THIS MEANS TO LOOK THAT MANY LEFT AND THAT MANY RIGHT
     //IE. 3 means total window size of 7, the value, 3 to the left, and 3 to the right
     
+    //double vector exists to switch from a circular buffer into a non-circular vector.
+    
     vector<double> buf(bufferSize);
     for(int i=0; i < bufferSize; i ++) {
         size_t idx =(currentIndex + i + 1) % bufferSize;
         buf[i] = self.avgPixelIntensityRed[idx];
     }
     
-    
+    //Peak finding begins here
     size_t prevPeak = 0, peakDistSum = 0,numPeaks = 0;
     for(size_t i = WINDOW_LOOK_SIZE; i < bufferSize - WINDOW_LOOK_SIZE; i ++) {
         double _max = buf[i];
@@ -150,9 +133,8 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
             peakDistSum += i - prevPeak;
             prevPeak = i;
             numPeaks += 1;
-            //TODO Maybe take the average peak dist and use that instead of num peaks
+            //populate ppg array for graph with higher values for peaks and lower values for non-peaks
             self.ppg[i] = (buf[i]/128) - 0.5;
-            
         } else {
             self.ppg[i] = (buf[i]/128) - 1;
         }
@@ -161,6 +143,7 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
     return bpm;
 }
 
+//reset all the buffers if view is exited.
 -(void)resetBuffer{
     for(int i = 0; i< bufferSize; i++){
         avgPixelIntensityBlue[i] = 0;
