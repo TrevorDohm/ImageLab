@@ -29,12 +29,12 @@ class ModuleAViewController: UIViewController, VideoModelDelegate {
     
     @objc func updateBlinkLabel(){
         let numBlinks = max(videoModel!.blinkCount, 0)
-        blinkLabel.text = "You have blinked: \(numBlinks)"
+        blinkLabel.text = "You Have Blinked: \(numBlinks)"
     }
     
     func didDetectBlink(blinkCount: Int) {
         DispatchQueue.main.async {
-            self.blinkLabel.text = "You have blinked: \(blinkCount)"
+            self.blinkLabel.text = "You Have Blinked: \(blinkCount)"
         }
         print("updated label")
     }

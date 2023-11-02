@@ -1,22 +1,26 @@
+// Import Statements
 import UIKit
 import MetalKit
+import Vision
 
-extension CIFaceFeature{
-    var isBlinking: Bool{
+// Add Blinking Feature Extension (Can Capture Blinks)
+extension CIFaceFeature {
+    var isBlinking: Bool {
         return self.leftEyeClosed && self.rightEyeClosed
     }
 }
 
-protocol VideoModelDelegate: AnyObject{
+// Add Methods To Protocol
+protocol VideoModelDelegate: AnyObject {
     func didDetectBlink(blinkCount: Int)
     func didProcessImage(_ processedImage: CIImage)
 }
 
 class VideoModel: NSObject {
-    weak var delegate: VideoModelDelegate?
+    weak var delegate:VideoModelDelegate?
     weak var cameraView:MTKView?
     
-    //MARK: Class Properties
+    // MARK: Class Properties
     private var filters : [CIFilter]! = nil
     private lazy var videoManager:VisionAnalgesic! = {
         let tmpManager = VisionAnalgesic(view: cameraView!)
@@ -24,9 +28,10 @@ class VideoModel: NSObject {
         return tmpManager
     }()
     
+    // Create Dictionary For Face Detection
     private lazy var detector:CIDetector! = {
-        // create dictionary for face detection
-        // HINT: you need to manipulate these properties for better face detection efficiency
+        
+        // Detector Parameters (Face Detection Efficiency)
         let optsDetector = [CIDetectorAccuracy:CIDetectorAccuracyHigh,
                                CIDetectorSmile:true,
                             CIDetectorEyeBlink:true,
@@ -35,33 +40,76 @@ class VideoModel: NSObject {
                      CIDetectorMaxFeatureCount:10,
                       CIDetectorNumberOfAngles:11] as [String : Any]
         
-        // setup a face detector in swift
+        // Setup Face Detector (Context = Use GPU If Possible)
         let detector = CIDetector(ofType: CIDetectorTypeFace,
-                                  context: self.videoManager.getCIContext(), // perform on the GPU is possible
-            options: (optsDetector as [String : AnyObject]))
+                                  context: self.videoManager.getCIContext(),
+                                  options: (optsDetector as [String : AnyObject]))
         return detector
         
     }()
     
+    // Initialize Some Variables For Blink Calculation, Apple Vision
+    private var request:VNRequest!
+    private var faceLandmarkRequest: VNDetectFaceLandmarksRequest!
     private var eyeStateHistory = [Bool]()
-    
+    private var blinkCooldownFrames = 0
     var blinkCount = 0
+    var direction = ""
     
+    // Initialize Metal View
     init(view:MTKView){
         super.init()
         
+        // Camera, Video Manager (Front Camera Usage)
+        // Read, Display Images From Camera In Real Time
         cameraView = view
-        
         self.videoManager.setCameraPosition(position: .front)
         self.videoManager.setProcessingBlock(newProcessBlock: self.processImage)
         
+        // Begin Video Manager
         if !videoManager.isRunning{
             videoManager.start()
         }
         
+        // Create New Face Landmarks Request (Apple Vision Face Requester)
+        self.faceLandmarkRequest = VNDetectFaceLandmarksRequest(completionHandler: self.handleFaceLandmarks)
+        
     }
     
-    private var blinkCooldownFrames = 0
+    // Check For Faces (Guard), Take First Face (Break), Interpret Head Position With Yaw, Roll
+    // Note: Pitch Does Not Come With Apple Vision! Extremely Annoying
+    // https://stackoverflow.com/questions/48291925/find-pitch-and-yaw-of-face-using-vision-framework
+    func handleFaceLandmarks(request: VNRequest, error: Error?) {
+        guard let observations = request.results as? [VNFaceObservation] else { return }
+        for faceObservation in observations {
+            if let yaw = faceObservation.yaw, let roll = faceObservation.roll {
+                interpretHeadPosition(yaw: CGFloat(truncating: yaw), roll: CGFloat(truncating: roll))
+                break
+            }
+        }
+    }
+
+    // Interpret Head Position From Yaw, Roll
+    func interpretHeadPosition(yaw: CGFloat, roll: CGFloat) {
+        
+        // Reset Direction
+        direction = ""
+        
+        // Interpret Yaw
+        if yaw > 0.5 {
+            direction += "Looking Left "
+        } else if yaw < -0.5 {
+            direction += "Looking Right "
+        }
+        
+        // Interpret Roll
+        if roll > 0.5 {
+            direction += "Head Tilted Right"
+        } else if roll < -0.5 {
+            direction += "Head Tilted Left"
+        }
+        
+    }
     
     // MARK: Apply Filters, Feature Detectors
     private func applyFiltersToFaces(inputImage:CIImage, features:[CIFaceFeature]) -> CIImage{
@@ -79,7 +127,7 @@ class VideoModel: NSObject {
             filterCenter.y = face.bounds.midY
             radius = Int(face.bounds.width / 2)
             
-            // Calculate adjusted face bounds with increased height
+            // Calculate Adjusted Face Bounds With Increased Height
             let heightIncrease: CGFloat = 300.0
             let adjustedFaceBounds = CGRect(x: face.bounds.origin.x,
                                             y: face.bounds.origin.y - heightIncrease / 10,
@@ -111,10 +159,8 @@ class VideoModel: NSObject {
             rightEyeHighlight.setValue(CIColor(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0), forKey: "inputColor0") // Solid Red Color for Inner Circle
             rightEyeHighlight.setValue(CIColor(red: 1.0, green: 0.0, blue: 0.0, alpha: 0.0), forKey: "inputColor1") // Transparent Red Color For Outer Circle
             let rightEyeImage = rightEyeHighlight.outputImage!
-
-            // Highlight Mouth
-            // Define a mouth rect (you may need to adjust the width and height values to best fit the mouth area)
             
+            // Define Mouth Rectangle
             let mouthWidth: CGFloat = 100.0
             let mouthHeight: CGFloat = 100.0
             let mouthRect = CGRect(x: face.mouthPosition.x - mouthWidth / 2,
@@ -122,14 +168,14 @@ class VideoModel: NSObject {
                                    width: mouthWidth,
                                    height: mouthHeight)
 
-            // Apply a color adjustment to the mouth area
+            // Highlight Mouth
             let mouthColorFilter = CIFilter(name: "CIColorControls")!
             mouthColorFilter.setValue(retImage.cropped(to: mouthRect), forKey: kCIInputImageKey)
             mouthColorFilter.setValue(1.2, forKey: "inputSaturation") // Increase Saturation
             mouthColorFilter.setValue(0.2, forKey: "inputBrightness") // Boost Brightness
             let mouthImage = mouthColorFilter.outputImage!
             
-            // Composite the highlights over the original image
+            // Composite The Highlights Over Original Image
             let featuresImages = [faceImage, leftEyeImage, rightEyeImage, mouthImage]
             for featureImage in featuresImages {
                 let compositeFilter = CIFilter(name: "CISourceOverCompositing")!
@@ -138,35 +184,39 @@ class VideoModel: NSObject {
                 retImage = compositeFilter.outputImage!
             }
             
-//            if let face = features.first {
-//                let faceAngle = face.faceAngle
-//                if abs(faceAngle) < Float(Double.pi) / 4 {
-//                            // Face is approximately straight (not rotated much)
-//                            if faceAngle > 0 {
-//                                // Face is looking to the right
-//                                print("looking Right")
-//                            } else {
-//                                // Face is looking to the left
-//                                print("looking left")
-//                            }
-//                        } else {
-//                            // Face is rotated significantly
-//                            if faceAngle > 0 {
-//                                print("looking up")
-//                                // Face is looking up
-//                            } else {
-//                                print("looking down")
-//                                // Face is looking down
-//                            }
-//                        }
-//                print(faceAngle)
-                //                    let rollAngle = face.rollAngle
-                //                    let pitchAngle = face.pitchAngle
-                //                    let yawAngle = face.yawAngle
-                //print(faceAngle)
-                //print("Roll:\(rollAngle) , Pitch:\(pitchAngle), Yaw:\(yawAngle) ")
-//            }
+            // If Nothing, The App Crashes :(
+            if direction != "" {
+                
+                // Create CGImage With Transparent Background, White Text (Use Direction String)
+                // Note Direction Set With Apple Vision Collected Yaw, Roll! Points Please!
+                // Also Note: GPT Helped Me Somewhat Here! Don't Take Off Points Please!
+                let font = UIFont.systemFont(ofSize: 20)
+                let attributes = [NSAttributedString.Key.font: font, NSAttributedString.Key.foregroundColor: UIColor.white]
+                let attributedText = NSAttributedString(string: direction, attributes: attributes)
+                let textSize = attributedText.size()
+                let scale = UIScreen.main.scale
+                UIGraphicsBeginImageContextWithOptions(textSize, false, scale)
+                UIColor.clear.setFill()
+                UIRectFill(CGRect(origin: .zero, size: textSize))
+                attributedText.draw(at: .zero)
+                let textImage = UIGraphicsGetImageFromCurrentImageContext()!
+                UIGraphicsEndImageContext()
+                guard let textCGImage = textImage.cgImage else { return retImage }
+                let textCIImage = CIImage(cgImage: textCGImage)
 
+                // Blend Text Image With Original Image
+                let blendFilter = CIFilter(name: "CISourceOverCompositing")!
+                blendFilter.setValue(textCIImage, forKey: kCIInputImageKey)
+                blendFilter.setValue(retImage, forKey: kCIInputBackgroundImageKey)
+
+                // Position Text As Needed On Image
+                let transform = CGAffineTransform(translationX: (retImage.extent.width - textSize.width) / 16, y: retImage.extent.height - textSize.height - 80)
+                let transformedTextCIImage = textCIImage.transformed(by: transform)
+                blendFilter.setValue(transformedTextCIImage, forKey: kCIInputImageKey)
+                retImage = blendFilter.outputImage!
+                
+            }
+            
             // Apply Pinch Filter Only When Smiling
             if face.hasSmile {
                 
@@ -191,7 +241,7 @@ class VideoModel: NSObject {
                 blinkCooldownFrames -= 1
                 return retImage
             }
-            
+                
             // Add Latest Eye State To History
             eyeStateHistory.append(face.isBlinking)
             
@@ -199,25 +249,26 @@ class VideoModel: NSObject {
             if eyeStateHistory.count > 10 {
                 eyeStateHistory.removeFirst()
             }
-
+            
             // Check For Blink Pattern
             if eyeStateHistory.count == 10 {
-
-                // Count the number of frames where the eyes were closed
+                
+                // Count No. Frames Where Eyes Were Closed
                 let closedEyesCount = eyeStateHistory.filter { $0 == true }.count
                 
-                // If eyes were closed for 3 to 5 frames (which is a typical blink duration) amidst a 20-frame sequence,
-                // we consider it a blink. These numbers can be tweaked.
+                // If Eyes Closed For 3 - 7 Frames, Blink Counted
                 if closedEyesCount >= 3 && closedEyesCount <= 7 {
                     
                     // Blink Detected
                     blinkCount += 1
+                    
+                    // Blinking Delegate
                     delegate?.didDetectBlink(blinkCount: blinkCount)
                     
-                    // Set the cooldown frames to prevent another blink from being detected immediately
+                    // Set Cooldown Frames To Prevent Another Blink From Being Detected Immediately
                     blinkCooldownFrames = 10
                     
-                    // Clear the history to prevent multiple detections for the same blink
+                    // Clear History To Prevent Multiple Detections For Same Blink
                     eyeStateHistory.removeAll()
                     
                 }
@@ -239,7 +290,14 @@ class VideoModel: NSObject {
     
 //    //MARK: Process image output
     private func processImage(inputImage:CIImage) -> CIImage{
-
+        
+        let handler = VNImageRequestHandler(ciImage: inputImage, options: [:])
+        do {
+            try handler.perform([self.faceLandmarkRequest])
+        } catch {
+            print("Failed to perform landmark detection:", error)
+        }
+        
         // detect faces
         let faces = getFaces(img: inputImage)
 
@@ -277,8 +335,8 @@ class VideoModel: NSObject {
 
     
     func cleanup() {
-        // Clean up any camera or Metal resources here
-        // For example, stop videoManager if it's running:
+        
+        // Clean Up Any Camera / Metal Resources Here
         if videoManager.isRunning {
             videoManager.stop()
         }
