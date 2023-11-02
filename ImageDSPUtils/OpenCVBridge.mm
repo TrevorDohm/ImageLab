@@ -96,7 +96,7 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
         avgPixelIntensityBlue[currentIndex] = avgPixelIntensity.val[0];
         avgPixelIntensityGreen[currentIndex] = avgPixelIntensity.val[1];
         self.avgPixelIntensityRed[currentIndex] = avgPixelIntensity.val[2];
-        self.ppg[currentIndex] = (avgPixelIntensity.val[2] / 128) - 1;
+        //self.ppg[currentIndex] = (avgPixelIntensity.val[2] / 128) - 1;
         // Increment Index
         currentIndex++;
         if (currentIndex >= bufferSize) { //make sure we dont go out of bounds, will handle circular later
@@ -151,6 +151,10 @@ cv::Size textSize = cv::getTextSize(text, FONT_HERSHEY_PLAIN, fontScale, thickne
             prevPeak = i;
             numPeaks += 1;
             //TODO Maybe take the average peak dist and use that instead of num peaks
+            self.ppg[i] = (buf[i]/128) - 0.5;
+            
+        } else {
+            self.ppg[i] = (buf[i]/128) - 1;
         }
     }
     int bpm = int(numPeaks * 60 /secondsToFillBuffer);

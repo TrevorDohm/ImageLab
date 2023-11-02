@@ -4,7 +4,7 @@
 //
 //  Created by Eric Larson
 //  Copyright © Eric Larson. All rights reserved.
-//
+// This code was forked off the Flipped Module Branch. The code in this ViewController and OpenCVBridge are based off Eric Larson's ImageLab Repo.
 
 import UIKit
 import AVFoundation
@@ -51,47 +51,45 @@ class ViewController: UIViewController   {
         
         self.videoManager = VisionAnalgesic(view: self.cameraView)
         self.videoManager.setCameraPosition(position: AVCaptureDevice.Position.back)
+        
+        //Not sure if necessary but set framerate of phone here, iPhone X was used in video
         self.videoManager.setFPS(desiredFrameRate: 30)
         // create dictionary for face detection
     
         self.videoManager.setProcessingBlock(newProcessBlock: self.processImageSwift)
         
+        //timer for updating the bpm
         bpmTimer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.bpmUpdater), userInfo: nil, repeats: true)
+        
         if !videoManager.isRunning{
             videoManager.start()
         }
+        
+        //timer for updating bpm graph
         Timer.scheduledTimer(withTimeInterval: 1/30.0, repeats: true) { _ in
             self.updateGraphView()
         }
-        
-//        startUpdatingBPM()
-    
+            
     }
+    
     func cleanup(){
          if videoManager.isRunning {
              videoManager.stop()
          }
      }
-
+    //If view is exited during exection this will reset the buffers and current Index
      override func viewWillDisappear(_ animated: Bool) {
          super.viewWillDisappear(animated)
          self.cleanup()
          self.bridge.resetBuffer()
      }
     
-    func logC(val: Double, forBase base: Double) -> Double {
-        return log(val)/log(base)
-    }
-    
     @objc func updateGraphView() {
-//        var theArray:[Float] = Array.init(repeating: 0.0, count: Int(self.bridge.getBufferSize()))
         var theArray:[Float] = []
         for i in 0...Int(self.bridge.getBufferSize()){
             theArray.append(Float(self.bridge.ppg[i]))
         }
-//        memcpy(&theArray, self.bridge.ppg, Int(self.bridge.getBufferSize() * 4))
-//        vDSP_vdpsp(self.bridge.ppg, 1, &theArray, 1, vDSP_Length(Int(self.bridge.getBufferSize())))
-        
+
         self.graph?.updateGraph(
             data: theArray,
             forKey: "bpm"
@@ -113,7 +111,6 @@ class ViewController: UIViewController   {
         // Process Finger
         let isFingerDetected = self.bridge.processFinger()
         
-        
         // Based On Return Value, Enable / Disable Buttons
         
             self.torchToggleButton.isEnabled = !isFingerDetected
@@ -133,7 +130,6 @@ class ViewController: UIViewController   {
                 
             }
         
-
         // Toggle Flash Depending On Return
         // Note: Only Change If Not Already Controlled
         if !isFlashManuallyControlled {
