@@ -3,14 +3,12 @@ import UIKit
 import MetalKit
 import Vision
 
-// Add Blinking Feature Extension (Can Capture Blinks)
+// Add Blinking Feature Extension (Can Capture Blinks) to the Face feature to use for applying filters
 extension CIFaceFeature {
     var isBlinking: Bool {
         return self.leftEyeClosed && self.rightEyeClosed
     }
 }
-
-// Add Methods To Protocol
 
 class VideoModel: NSObject {
     weak var cameraView:MTKView?
@@ -26,7 +24,7 @@ class VideoModel: NSObject {
     // Create Dictionary For Face Detection
     private lazy var detector:CIDetector! = {
         
-        // Detector Parameters (Face Detection Efficiency)
+        // Detector Parameters (Face Detection Efficiency) Will detect 10 faces at once
         let optsDetector = [CIDetectorAccuracy:CIDetectorAccuracyHigh,
                                CIDetectorSmile:true,
                             CIDetectorEyeBlink:true,
@@ -106,7 +104,7 @@ class VideoModel: NSObject {
         
     }
     
-    // MARK: Apply Filters, Feature Detectors
+    // MARK: Apply Filters, Feature Detectors, Workhorse of this Module
     private func applyFiltersToFaces(inputImage:CIImage, features:[CIFaceFeature]) -> CIImage{
         
         // Initialize Image, Face Center, Radius
@@ -232,6 +230,7 @@ class VideoModel: NSObject {
             }
             
             // If Cooldown, Decrement Cooldown, Skip Blink Detection
+            // Slow blinking is preffered. There is a 10 frame blink cooldown
             if blinkCooldownFrames > 0 {
                 blinkCooldownFrames -= 1
                 return retImage
@@ -268,12 +267,11 @@ class VideoModel: NSObject {
         }
         
         return retImage
-        
     }
     
     private func getFaces(img:CIImage) -> [CIFaceFeature]{
         
-        // Make Sure Image Is Correct Orientation
+        // Make Sure Image Is Correct Orientation and set to detect for smiling and blinking
         let optsFace = [CIDetectorImageOrientation:self.videoManager.ciOrientation,
                                    CIDetectorSmile: true,
                                 CIDetectorEyeBlink: true] as [String : Any] as [String : Any]
@@ -304,7 +302,6 @@ class VideoModel: NSObject {
     }
 
     func cleanup() {
-        
         // Clean Up Any Camera / Metal Resources Here
         if videoManager.isRunning {
             videoManager.stop()
